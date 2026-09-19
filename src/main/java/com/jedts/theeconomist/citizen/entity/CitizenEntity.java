@@ -5,6 +5,7 @@ import com.jedts.theeconomist.citizen.identity.CitizenAppearance;
 import com.jedts.theeconomist.citizen.identity.CitizenIdentity;
 import com.jedts.theeconomist.citizen.identity.CitizenLifeStage;
 import com.jedts.theeconomist.citizen.identity.CitizenModelType;
+import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
@@ -52,6 +53,13 @@ public final class CitizenEntity extends PathfinderMob {
 
     public CitizenIdentity identity() {
         return identity;
+    }
+
+    public boolean applyResolvedProfile(String assignedUsername, ResolvedProfile profile) {
+        Optional<CitizenIdentity> updated = identity.withResolvedProfile(assignedUsername, profile);
+        if (updated.isEmpty()) return false;
+        identity = updated.get();
+        return true;
     }
 
     @Override

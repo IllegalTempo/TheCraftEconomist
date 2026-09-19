@@ -1,5 +1,7 @@
 package com.jedts.theeconomist.citizen.identity;
 
+import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
+
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,5 +36,15 @@ public record CitizenIdentity(
 
     public String displayName() {
         return givenName + " " + familyName;
+    }
+
+    public Optional<CitizenIdentity> withResolvedProfile(String assignedUsername, ResolvedProfile profile) {
+        if (assignedUsername == null || profile == null || profileUsername.isEmpty()
+                || !profileUsername.get().equals(assignedUsername)) {
+            return Optional.empty();
+        }
+        return Optional.of(new CitizenIdentity(schemaVersion, citizenId, givenName, familyName, lifeStage,
+                profileUsername, new CitizenAppearance(profile.modelType(), Optional.of(profile.profileId()),
+                        Optional.of(profile.textureValue()), Optional.of(profile.textureSignature()))));
     }
 }
