@@ -6,7 +6,7 @@ The goal is not to reproduce every detail of a modern country. The goal is to cr
 
 ## Project status
 
-This repository now contains a minimal, modular Fabric foundation. Gameplay systems have not been implemented yet.
+This repository contains a modular Fabric foundation and the first Crown currency slice. Citizens and secure player trading are the next implementation stages; the larger population simulation remains a planned roadmap.
 
 Planned initial platform:
 
@@ -37,7 +37,7 @@ On Linux or macOS:
 ./gradlew build
 ```
 
-The remapped development JAR is written to `build/libs/`. The build also runs the module-bootstrap unit tests. The foundation contains no NPC, economy, item, block, service, or simulation content.
+The remapped development JAR is written to `build/libs/`. The build runs the module-bootstrap and currency unit tests. Crown items are currently obtainable through Creative mode or `/give`; they have no crafting or survival source yet.
 
 ### Code organization
 
@@ -59,10 +59,10 @@ Future systems should live in focused feature packages and register through a mo
 7. **Player agency without total control.** Citizens can refuse unfair contracts, change careers, protest, migrate, or defend themselves.
 
 ## Player Trade system
-- Player will shift right click another player or citizen to start a trade
-- A gui will be opened feature two inventory, one on the left(yourself) one on the right (The citizen/player you want to trade with)
-- If both accept, the trade will succeed
-- Citizen will consider if the trade is worth-it
+
+The first trade milestone is a server-authoritative player-to-player exchange. A player will shift-right-click another player with an empty hand, accept through the bottom-right request HUD, and then use a bilateral offer screen. Both participants must accept the request, offer items in their own 6-by-3 public grid, mark ready, and wait through the three-second confirmation countdown. Requests expire after 15 seconds and require the players to remain within 16 blocks in the same dimension.
+
+The planned request controls are `R` to accept and `X` to decline, both rebindable. Death, disconnect, dimension changes, excess distance, screen close, decline, timeout, or invalid state cancel safely. Nonlethal damage does not cancel. Full receiving inventories cause overflow items to drop at the receiving player's feet; there is no mailbox. Citizen trading and value-based acceptance decisions are later milestones.
 
 ## Citizens
 
@@ -136,11 +136,13 @@ Safeguards:
 
 ## Money, property, and trade
 
-The currency is the **Crown**, available as physical coins and later as bank balances:
+The currency is the **Crown**, currently available as physical item stacks:
 
-- 1 Crown copper coin
-- 10 Crown silver coin
-- 100 Crown gold coin
+- `theeconomist:copper_crown` - 1 Crown
+- `theeconomist:silver_crown` - 10 Crowns
+- `theeconomist:gold_crown` - 100 Crowns
+
+Use `/give @s theeconomist:copper_crown`, `/give @s theeconomist:silver_crown`, or `/give @s theeconomist:gold_crown` to obtain them during development. Crafting, denomination conversion, banks, minting, fees, taxes, and survival sources are outside the current milestone.
 
 Coins can be carried, stored, stolen, lost, or paid directly. Banks later enable large payments without moving stacks.
 
