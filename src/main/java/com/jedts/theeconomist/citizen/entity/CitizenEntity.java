@@ -1,7 +1,6 @@
 package com.jedts.theeconomist.citizen.entity;
 
 import com.jedts.theeconomist.citizen.CitizenRuntime;
-import com.jedts.theeconomist.citizen.info.CitizenInfoFormatter;
 import com.jedts.theeconomist.citizen.identity.CitizenAppearance;
 import com.jedts.theeconomist.citizen.identity.CitizenIdentity;
 import com.jedts.theeconomist.citizen.identity.CitizenLifeStage;
@@ -68,12 +67,13 @@ public final class CitizenEntity extends PathfinderMob {
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (!level().isClientSide()) {
-            double movementSpeed = getAttributeValue(Attributes.MOVEMENT_SPEED);
-            double followRange = getAttributeValue(Attributes.FOLLOW_RANGE);
-            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(CitizenInfoFormatter.format(
-                    identity, getHealth(), getMaxHealth(), movementSpeed, followRange,
-                    getBlockX(), getBlockY(), getBlockZ())));
+        if (level().isClientSide()) {
+            try {
+                Class<?> hooks = Class.forName("com.jedts.theeconomist.client.CitizenClientHooks");
+                hooks.getMethod("open", Object.class).invoke(null, this);
+            } catch (ReflectiveOperationException ignored) {
+                // Dedicated-server-safe: client UI classes are optional at runtime.
+            }
         }
         return InteractionResult.SUCCESS_SERVER;
     }
