@@ -1,6 +1,7 @@
 package com.jedts.theeconomist.citizen.entity;
 
 import com.jedts.theeconomist.citizen.CitizenRuntime;
+import com.jedts.theeconomist.citizen.info.CitizenInfoFormatter;
 import com.jedts.theeconomist.citizen.identity.CitizenAppearance;
 import com.jedts.theeconomist.citizen.identity.CitizenIdentity;
 import com.jedts.theeconomist.citizen.identity.CitizenLifeStage;
@@ -8,6 +9,7 @@ import com.jedts.theeconomist.citizen.identity.CitizenModelType;
 import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -20,6 +22,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -60,6 +64,18 @@ public final class CitizenEntity extends PathfinderMob {
         if (updated.isEmpty()) return false;
         identity = updated.get();
         return true;
+    }
+
+    @Override
+    protected InteractionResult mobInteract(Player player, InteractionHand hand) {
+        if (!level().isClientSide()) {
+            double movementSpeed = getAttributeValue(Attributes.MOVEMENT_SPEED);
+            double followRange = getAttributeValue(Attributes.FOLLOW_RANGE);
+            player.sendSystemMessage(net.minecraft.network.chat.Component.literal(CitizenInfoFormatter.format(
+                    identity, getHealth(), getMaxHealth(), movementSpeed, followRange,
+                    getBlockX(), getBlockY(), getBlockZ())));
+        }
+        return InteractionResult.SUCCESS_SERVER;
     }
 
     @Override
