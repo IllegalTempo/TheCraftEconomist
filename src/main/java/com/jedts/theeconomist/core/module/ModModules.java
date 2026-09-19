@@ -2,6 +2,7 @@ package com.jedts.theeconomist.core.module;
 
 import com.jedts.theeconomist.api.module.TheEconomistModule;
 import com.jedts.theeconomist.currency.CurrencyModule;
+import com.jedts.theeconomist.citizen.CitizenModule;
 
 import java.util.List;
 
@@ -13,7 +14,8 @@ import java.util.List;
  */
 public final class ModModules {
     private static final List<TheEconomistModule> MODULES = List.of(
-            new CurrencyModule()
+            new CurrencyModule(),
+            new CitizenModule()
     );
 
     private ModModules() {
