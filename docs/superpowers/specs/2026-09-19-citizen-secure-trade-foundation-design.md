@@ -1,7 +1,7 @@
 # Citizen and Secure Trade Foundation Design
 
 Date: 2026-09-19
-Status: Proposed for consolidated user review
+Status: Approved by the project owner on 2026-09-19
 
 ## Purpose
 
