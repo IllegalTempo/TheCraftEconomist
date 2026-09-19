@@ -1,6 +1,5 @@
 package com.jedts.theeconomist.client;
 
-import com.jedts.theeconomist.TheEconomistMod;
 import com.jedts.theeconomist.citizen.entity.CitizenEntities;
 import com.jedts.theeconomist.citizen.entity.CitizenEntity;
 import net.minecraft.client.model.HumanoidModel;
@@ -12,7 +11,7 @@ import net.minecraft.client.renderer.entity.state.HumanoidRenderState;
 import net.minecraft.resources.Identifier;
 
 public final class CitizenClientRenderer extends HumanoidMobRenderer<CitizenEntity, HumanoidRenderState, HumanoidModel<HumanoidRenderState>> {
-    private static final Identifier FALLBACK_TEXTURE = Identifier.fromNamespaceAndPath(TheEconomistMod.MOD_ID, "textures/entity/citizen/fallback.png");
+    private static final Identifier FALLBACK_TEXTURE = Identifier.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
 
     private CitizenClientRenderer(EntityRendererProvider.Context context) {
         super(context, new HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER)), 0.5f);

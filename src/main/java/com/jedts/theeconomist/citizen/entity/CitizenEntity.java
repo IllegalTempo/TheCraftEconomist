@@ -84,10 +84,15 @@ public final class CitizenEntity extends PathfinderMob {
         ValueInput root = input.childOrEmpty("TheEconomistCitizen");
         int schema = root.getIntOr("SchemaVersion", 1);
         UUID citizenId = UUID.fromString(root.getStringOr("CitizenId", getUUID().toString()));
-        String given = root.getStringOr("GivenName", "Citizen");
-        String family = root.getStringOr("FamilyName", "Unknown");
+        CitizenIdentity generated = CitizenRuntime.createIdentity(citizenId);
+        String given = root.getStringOr("GivenName", generated.givenName());
+        String family = root.getStringOr("FamilyName", generated.familyName());
+        if (given.equals("Citizen") && family.equals("Unknown")) {
+            given = generated.givenName();
+            family = generated.familyName();
+        }
         CitizenLifeStage stage = CitizenLifeStage.valueOf(root.getStringOr("LifeStage", CitizenLifeStage.ADULT.name()));
-        Optional<String> profile = root.getString("ProfileUsername");
+        Optional<String> profile = root.getString("ProfileUsername").or(() -> generated.profileUsername());
         CitizenModelType model = CitizenModelType.valueOf(root.getStringOr("ModelType", CitizenModelType.forFallback(citizenId).name()));
         Optional<UUID> profileId = root.getString("ProfileId").map(UUID::fromString);
         Optional<String> texture = root.getString("TextureValue");
