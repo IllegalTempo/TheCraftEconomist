@@ -8,6 +8,9 @@
   "entrypoints": {
     "main": [
       "com.jedts.theeconomist.TheEconomistMod"
+    ],
+    "client": [
+      "com.jedts.theeconomist.client.TheEconomistClient"
     ]
   },
   "depends": {
