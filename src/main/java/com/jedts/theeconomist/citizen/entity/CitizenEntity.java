@@ -9,6 +9,7 @@ import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import com.jedts.theeconomist.citizen.stats.CitizenStats;
 import com.jedts.theeconomist.citizen.stats.CitizenStatsSimulator;
 import com.jedts.theeconomist.citizen.stats.CitizenSkills;
+import com.jedts.theeconomist.citizen.job.CitizenJob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -34,6 +35,7 @@ public final class CitizenEntity extends PathfinderMob {
     private CitizenIdentity identity;
     private CitizenStats stats = CitizenStats.defaults();
     private CitizenSkills skills = CitizenSkills.defaults();
+    private CitizenJob job = CitizenJob.unemployed();
     private int statsTickCounter;
 
     public CitizenEntity(EntityType<? extends CitizenEntity> type, Level level) {
@@ -70,6 +72,10 @@ public final class CitizenEntity extends PathfinderMob {
 
     public CitizenSkills skills() {
         return skills;
+    }
+
+    public CitizenJob job() {
+        return job;
     }
 
     @Override
@@ -134,6 +140,12 @@ public final class CitizenEntity extends PathfinderMob {
         skillRoot.putInt("Building", skills.building());
         skillRoot.putInt("Combat", skills.combat());
         skillRoot.putInt("Trade", skills.trade());
+        ValueOutput jobRoot = output.child("TheEconomistCitizenJob");
+        jobRoot.putString("Occupation", job.occupation().name());
+        jobRoot.putString("Employer", job.employer());
+        jobRoot.putInt("WagePerDay", job.wagePerDay());
+        jobRoot.putInt("StartHour", job.startHour());
+        jobRoot.putInt("EndHour", job.endHour());
     }
 
     @Override
@@ -168,6 +180,14 @@ public final class CitizenEntity extends PathfinderMob {
         ValueInput skillRoot = input.childOrEmpty("TheEconomistCitizenSkills");
         skills = new CitizenSkills(skillRoot.getIntOr("Farming", 0), skillRoot.getIntOr("Mining", 0),
                 skillRoot.getIntOr("Building", 0), skillRoot.getIntOr("Combat", 0), skillRoot.getIntOr("Trade", 0));
+        ValueInput jobRoot = input.childOrEmpty("TheEconomistCitizenJob");
+        try {
+            job = new CitizenJob(com.jedts.theeconomist.citizen.job.CitizenOccupation.valueOf(
+                    jobRoot.getStringOr("Occupation", "UNEMPLOYED")), jobRoot.getStringOr("Employer", ""),
+                    jobRoot.getIntOr("WagePerDay", 0), jobRoot.getIntOr("StartHour", 0), jobRoot.getIntOr("EndHour", 0));
+        } catch (IllegalArgumentException ignored) {
+            job = CitizenJob.unemployed();
+        }
         setCustomName(net.minecraft.network.chat.Component.literal(identity.displayName()));
         setCustomNameVisible(true);
     }
