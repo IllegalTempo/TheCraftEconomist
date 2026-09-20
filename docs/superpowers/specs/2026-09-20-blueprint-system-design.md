@@ -2,18 +2,26 @@
 
 ## Goal
 
-Add a server-authoritative blueprint workflow for planning buildings without modifying the world during preview. The first milestone provides an Empty Blueprint item, a data model for planned structures, and a safe planning interaction. Later milestones connect saved blueprints to building contracts and citizen builders.
+Add a server-authoritative blueprint workflow with three explicit item states. The first milestone provides the state model and safe planning interaction. Later milestones connect planned blueprints to building contracts and citizen builders.
 
 ## Scope
+
+### Blueprint states
+
+- `EMPTY`: the item has no captured structure and can start a design session.
+- `DESIGNED`: the player has built the structure in planning mode and saved those blocks into the blueprint. The captured structure contains relative block positions and block states, but no world placement.
+- `PLANNED`: a designed blueprint has been positioned at an exact world origin with rotation/mirror and a validated placement boundary. It is ready to become a construction contract; the actual world blocks are still unchanged.
+
+The valid transitions are `EMPTY -> DESIGNED -> PLANNED`. A player may return a designed or planned blueprint to empty only through an explicit discard/reset action.
 
 ### First milestone
 
 - Register an `Empty Blueprint` item.
-- Let a player enter planning mode with the item.
-- Render a client-side blue/transparent preview.
-- Keep preview blocks fake; no world blocks are changed.
-- Allow cancel and confirmation input.
-- Send confirmation to the server for validation.
+- Let an empty player-held blueprint enter design mode.
+- Render client-side blue/transparent fake blocks as the player builds the design.
+- Capture the built fake blocks into the item as a designed blueprint.
+- Let a designed blueprint enter placement mode and render its exact planned position.
+- Validate and store the planned origin, rotation, mirror, and boundary without changing world blocks.
 
 ### Later milestones
 
@@ -25,23 +33,23 @@ Add a server-authoritative blueprint workflow for planning buildings without mod
 
 ## Architecture
 
-`BlueprintItem` owns player interaction and planning-mode entry. `BlueprintPlan` is an immutable, testable structure containing an origin, transform, dimensions, and relative block states. `BlueprintPreview` is client-only rendering state and never writes blocks. `BlueprintValidator` runs on the server and rejects protected, impossible, or out-of-bound placements. A future `BlueprintSavedData`/item component stores validated plans for restart-safe use.
+`BlueprintItem` owns state-aware interaction. `BlueprintDesign` is an immutable, testable captured structure containing dimensions and relative block states. `BlueprintPlacement` stores the exact world origin, transform, and boundary for a designed blueprint. `BlueprintPreview` is client-only rendering state and never writes blocks. `BlueprintValidator` runs on the server and rejects protected, impossible, or out-of-bound placements. Blueprint item data stores the state and captured/placement data for restart-safe use.
 
 The client sends only a proposed plan. The server is authoritative and must revalidate every position and block state before accepting it. Preview packets are bounded by maximum dimensions and block count to prevent oversized plans.
 
 ## Data flow
 
-1. Player uses Empty Blueprint.
-2. Client creates a local origin and preview transform.
-3. Client renders ghost blocks tinted blue.
-4. Player rotates, mirrors, confirms, or cancels.
-5. Confirmation sends the plan to the server.
-6. Server validates permissions, bounds, claims, protected blocks, and size limits.
-7. Accepted plans are saved; rejected plans return a clear reason.
+1. Player uses an `EMPTY` blueprint to enter design mode.
+2. Client renders fake blue blocks while the player builds the design.
+3. Player saves the design; the server validates and stores it as `DESIGNED`.
+4. Player uses the `DESIGNED` blueprint to position an exact world placement.
+5. Client previews the transformed structure without changing blocks.
+6. Player confirms; the server validates permissions, bounds, claims, protected blocks, and size limits.
+7. The item becomes `PLANNED` and stores the exact placement; rejected plans return a clear reason.
 
 ## Safety rules
 
-- Preview never changes world state.
+- Design and placement previews never change world state.
 - Server rejects protected blocks, claimed land without permission, portals, containers, redstone, rare blocks, and entities unless a later rule explicitly authorizes them.
 - A plan has a bounded maximum volume and block count.
 - Saving is atomic: invalid plans are not partially stored.
@@ -49,9 +57,8 @@ The client sends only a proposed plan. The server is authoritative and must reva
 
 ## Testing
 
-- Unit-test plan transforms, bounds, block-count limits, and serialization.
+- Unit-test state transitions, design capture, placement transforms, bounds, block-count limits, and serialization.
 - Unit-test validator rejection reasons.
 - Test that cancel produces no world mutation.
 - Test that invalid server submissions are rejected.
 - Run the full Gradle test suite and build before committing.
-
