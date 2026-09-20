@@ -1,6 +1,7 @@
 package com.jedts.theeconomist.client;
 
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
+import com.jedts.theeconomist.blueprint.BlueprintBlock;
 import com.jedts.theeconomist.blueprint.BlueprintPlacement;
 import com.jedts.theeconomist.blueprint.BlueprintUpdatePayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -31,6 +32,10 @@ public final class BlueprintClientController {
     private static BlockPos designOrigin;
     private static final Map<BlockPos, BlockState> originals = new HashMap<>();
     private static final Map<BlockPos, BlockState> fakeBlocks = new HashMap<>();
+    private static final Map<BlockPos, BlockState> previewOriginals = new HashMap<>();
+    private static BlockPos placementOrigin;
+    private static int placementRotation;
+    private static boolean previousRotateKey;
     private static boolean previousMayFly;
     private static boolean previousFlying;
 
@@ -70,6 +75,29 @@ public final class BlueprintClientController {
     public static boolean designing() { return designing; }
     public static boolean placing() { return placing; }
     public static BlockPos designOrigin() { return designOrigin; }
+
+    public static void updatePlacementPreview(Minecraft minecraft) {
+        if (!placing || workingDesign == null || minecraft.player == null || minecraft.level == null) return;
+        boolean rotateKey = minecraft.options.keySprint.isDown() && minecraft.options.keyUse.isDown();
+        if (rotateKey && !previousRotateKey) placementRotation = (placementRotation + 1) % 4;
+        previousRotateKey = rotateKey;
+        HitResult hit = minecraft.player.pick(32.0, 0.0f, false);
+        placementOrigin = hit instanceof BlockHitResult blockHit
+                ? blockHit.getBlockPos().relative(blockHit.getDirection()) : minecraft.player.blockPosition();
+        clearPlacementPreview(minecraft);
+        BlueprintPlacement placement = currentPlacement(minecraft);
+        for (BlueprintBlock block : workingDesign.blocks()) {
+            BlockPos world = placement.worldPosition(workingDesign, block);
+            previewOriginals.putIfAbsent(world, minecraft.level.getBlockState(world));
+            minecraft.level.setBlock(world, Blocks.STAINED_GLASS.blue().defaultBlockState(), 19);
+        }
+    }
+
+    public static BlueprintPlacement currentPlacement(Minecraft minecraft) {
+        String dimension = minecraft.level == null ? "minecraft:overworld" : minecraft.level.dimension().identifier().toString();
+        return new BlueprintPlacement(dimension, placementOrigin == null ? minecraft.player.blockPosition() : placementOrigin,
+                placementRotation, false, false);
+    }
 
     public static void confirmDesign(BlueprintDesign design) {
         workingDesign = design;
@@ -135,5 +163,13 @@ public final class BlueprintClientController {
             for (var entry : originals.entrySet()) minecraft.level.setBlock(entry.getKey(), entry.getValue(), 19);
         }
         originals.clear(); fakeBlocks.clear();
+        clearPlacementPreview(minecraft);
+    }
+
+    private static void clearPlacementPreview(Minecraft minecraft) {
+        if (minecraft.level != null) {
+            for (var entry : previewOriginals.entrySet()) minecraft.level.setBlock(entry.getKey(), entry.getValue(), 19);
+        }
+        previewOriginals.clear();
     }
 }

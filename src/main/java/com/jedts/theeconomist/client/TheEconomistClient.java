@@ -37,8 +37,8 @@ public final class TheEconomistClient implements ClientModInitializer {
                     return InteractionResult.SUCCESS;
                 }
                 if (BlueprintClientController.placing()) {
-                    BlueprintClientController.confirmPlacement(new com.jedts.theeconomist.blueprint.BlueprintPlacement(
-                            player.blockPosition(), 0, false, false));
+                    BlueprintClientController.confirmPlacement(BlueprintClientController.currentPlacement(
+                            net.minecraft.client.Minecraft.getInstance()));
                     return InteractionResult.SUCCESS;
                 }
             }
@@ -58,6 +58,7 @@ public final class TheEconomistClient implements ClientModInitializer {
             return InteractionResult.PASS;
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            BlueprintClientController.updatePlacementPreview(client);
             if (BlueprintClientController.designing() && client.player != null
                     && BlueprintClientController.designOrigin() != null
                     && BlueprintClientController.designOrigin().distSqr(client.player.blockPosition()) > 32 * 32) {
