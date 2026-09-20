@@ -37,6 +37,10 @@ public final class TheEconomistClient implements ClientModInitializer {
                     return InteractionResult.SUCCESS;
                 }
                 if (BlueprintClientController.placing()) {
+                    if (player.isSprinting()) {
+                        BlueprintClientController.rotatePlacement();
+                        return InteractionResult.SUCCESS;
+                    }
                     BlueprintClientController.confirmPlacement(BlueprintClientController.currentPlacement(
                             net.minecraft.client.Minecraft.getInstance()));
                     return InteractionResult.SUCCESS;

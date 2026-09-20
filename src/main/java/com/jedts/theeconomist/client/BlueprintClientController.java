@@ -35,7 +35,6 @@ public final class BlueprintClientController {
     private static final Map<BlockPos, BlockState> previewOriginals = new HashMap<>();
     private static BlockPos placementOrigin;
     private static int placementRotation;
-    private static boolean previousRotateKey;
     private static boolean previousMayFly;
     private static boolean previousFlying;
 
@@ -60,6 +59,8 @@ public final class BlueprintClientController {
         workingDesign = data.design();
         placing = workingDesign != null;
         designing = false;
+        placementRotation = 0;
+        placementOrigin = Minecraft.getInstance().player.blockPosition();
         if (placing) Minecraft.getInstance().player.sendOverlayMessage(Component.literal("Placement preview activated."));
     }
     public static void cancel() {
@@ -78,9 +79,6 @@ public final class BlueprintClientController {
 
     public static void updatePlacementPreview(Minecraft minecraft) {
         if (!placing || workingDesign == null || minecraft.player == null || minecraft.level == null) return;
-        boolean rotateKey = minecraft.options.keySprint.isDown() && minecraft.options.keyUse.isDown();
-        if (rotateKey && !previousRotateKey) placementRotation = (placementRotation + 1) % 4;
-        previousRotateKey = rotateKey;
         HitResult hit = minecraft.player.pick(32.0, 0.0f, false);
         placementOrigin = hit instanceof BlockHitResult blockHit
                 ? blockHit.getBlockPos().relative(blockHit.getDirection()) : minecraft.player.blockPosition();
@@ -97,6 +95,11 @@ public final class BlueprintClientController {
         String dimension = minecraft.level == null ? "minecraft:overworld" : minecraft.level.dimension().identifier().toString();
         return new BlueprintPlacement(dimension, placementOrigin == null ? minecraft.player.blockPosition() : placementOrigin,
                 placementRotation, false, false);
+    }
+
+    public static void rotatePlacement() {
+        placementRotation = (placementRotation + 1) % 4;
+        Minecraft.getInstance().player.sendOverlayMessage(Component.literal("Placement rotated " + (placementRotation * 90) + " degrees."));
     }
 
     public static void confirmDesign(BlueprintDesign design) {
