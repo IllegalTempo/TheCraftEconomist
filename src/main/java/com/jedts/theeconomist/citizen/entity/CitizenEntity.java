@@ -8,6 +8,7 @@ import com.jedts.theeconomist.citizen.identity.CitizenModelType;
 import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import com.jedts.theeconomist.citizen.stats.CitizenStats;
 import com.jedts.theeconomist.citizen.stats.CitizenStatsSimulator;
+import com.jedts.theeconomist.citizen.stats.CitizenSkills;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -32,6 +33,7 @@ import java.util.UUID;
 public final class CitizenEntity extends PathfinderMob {
     private CitizenIdentity identity;
     private CitizenStats stats = CitizenStats.defaults();
+    private CitizenSkills skills = CitizenSkills.defaults();
     private int statsTickCounter;
 
     public CitizenEntity(EntityType<? extends CitizenEntity> type, Level level) {
@@ -64,6 +66,10 @@ public final class CitizenEntity extends PathfinderMob {
 
     public CitizenStats stats() {
         return stats;
+    }
+
+    public CitizenSkills skills() {
+        return skills;
     }
 
     @Override
@@ -122,6 +128,12 @@ public final class CitizenEntity extends PathfinderMob {
         statRoot.putInt("Bravery", stats.bravery());
         statRoot.putInt("Sociability", stats.sociability());
         statRoot.putInt("Loyalty", stats.loyalty());
+        ValueOutput skillRoot = output.child("TheEconomistCitizenSkills");
+        skillRoot.putInt("Farming", skills.farming());
+        skillRoot.putInt("Mining", skills.mining());
+        skillRoot.putInt("Building", skills.building());
+        skillRoot.putInt("Combat", skills.combat());
+        skillRoot.putInt("Trade", skills.trade());
     }
 
     @Override
@@ -153,6 +165,9 @@ public final class CitizenEntity extends PathfinderMob {
                 statRoot.getIntOr("Education", 0), statRoot.getIntOr("Ambition", 50),
                 statRoot.getIntOr("Thrift", 50), statRoot.getIntOr("Bravery", 50),
                 statRoot.getIntOr("Sociability", 50), statRoot.getIntOr("Loyalty", 50));
+        ValueInput skillRoot = input.childOrEmpty("TheEconomistCitizenSkills");
+        skills = new CitizenSkills(skillRoot.getIntOr("Farming", 0), skillRoot.getIntOr("Mining", 0),
+                skillRoot.getIntOr("Building", 0), skillRoot.getIntOr("Combat", 0), skillRoot.getIntOr("Trade", 0));
         setCustomName(net.minecraft.network.chat.Component.literal(identity.displayName()));
         setCustomNameVisible(true);
     }
