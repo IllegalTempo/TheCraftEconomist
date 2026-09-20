@@ -7,6 +7,7 @@ import com.jedts.theeconomist.citizen.info.CitizenInfoScreenData;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.world.InteractionResult;
@@ -53,6 +54,18 @@ public final class TheEconomistClient implements ClientModInitializer {
                 return InteractionResult.SUCCESS;
             }
             return InteractionResult.PASS;
+        });
+        UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+            if (!level.isClientSide() || !BlueprintClientController.designing()) {
+                return InteractionResult.PASS;
+            }
+            ItemStack stack = player.getItemInHand(hand);
+            if (!(stack.getItem() instanceof BlockItem blockItem)) {
+                return InteractionResult.PASS;
+            }
+            BlockPos target = hit.getBlockPos().relative(hit.getDirection());
+            BlueprintClientController.placeFake(minecraft(), target, blockItem.getBlock().defaultBlockState());
+            return InteractionResult.SUCCESS;
         });
         AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
             if (level.isClientSide() && BlueprintClientController.designing()) {
