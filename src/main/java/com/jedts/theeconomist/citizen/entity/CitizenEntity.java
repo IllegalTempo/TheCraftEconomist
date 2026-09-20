@@ -10,6 +10,7 @@ import com.jedts.theeconomist.citizen.stats.CitizenStats;
 import com.jedts.theeconomist.citizen.stats.CitizenStatsSimulator;
 import com.jedts.theeconomist.citizen.stats.CitizenSkills;
 import com.jedts.theeconomist.citizen.job.CitizenJob;
+import com.jedts.theeconomist.citizen.job.CitizenOccupation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -84,7 +85,21 @@ public final class CitizenEntity extends PathfinderMob {
         if (!level().isClientSide() && ++statsTickCounter >= 200) {
             statsTickCounter = 0;
             stats = CitizenStatsSimulator.advance(stats, false, false, true);
+            considerContracts();
         }
+    }
+
+    private void considerContracts() {
+        if (job.occupation() != CitizenOccupation.UNEMPLOYED) return;
+        int skill = Math.max(Math.max(skills.farming(), skills.mining()), Math.max(skills.building(),
+                Math.max(skills.combat(), skills.trade())));
+        CitizenRuntime.contracts().acceptBest(getUUID(), skill, level().getGameTime()).ifPresent(contract -> {
+            CitizenOccupation occupation = CitizenOccupation.fromContractTarget(contract.target());
+            if (occupation != CitizenOccupation.UNEMPLOYED) {
+                job = new CitizenJob(occupation, "Contract " + contract.id(), contract.bounty(), 8, 16);
+                contract.start(getUUID());
+            }
+        });
     }
 
     public boolean applyResolvedProfile(String assignedUsername, ResolvedProfile profile) {
