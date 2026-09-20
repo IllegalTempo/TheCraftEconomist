@@ -47,12 +47,6 @@ public final class TheEconomistClient implements ClientModInitializer {
                     return InteractionResult.SUCCESS;
                 }
             }
-            if (BlueprintClientController.designing() && stack.getItem() instanceof BlockItem blockItem
-                    && player.pick(6.0, 0.0f, false) instanceof BlockHitResult hit) {
-                BlockPos target = hit.getBlockPos().relative(hit.getDirection());
-                BlueprintClientController.placeFake(minecraft(), target, blockItem.getBlock().defaultBlockState());
-                return InteractionResult.SUCCESS;
-            }
             return InteractionResult.PASS;
         });
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
