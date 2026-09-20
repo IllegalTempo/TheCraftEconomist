@@ -7,6 +7,7 @@ import com.jedts.theeconomist.citizen.identity.CitizenLifeStage;
 import com.jedts.theeconomist.citizen.identity.CitizenModelType;
 import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import com.jedts.theeconomist.citizen.stats.CitizenStats;
+import com.jedts.theeconomist.citizen.stats.CitizenStatsSimulator;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -31,6 +32,7 @@ import java.util.UUID;
 public final class CitizenEntity extends PathfinderMob {
     private CitizenIdentity identity;
     private CitizenStats stats = CitizenStats.defaults();
+    private int statsTickCounter;
 
     public CitizenEntity(EntityType<? extends CitizenEntity> type, Level level) {
         super(type, level);
@@ -62,6 +64,15 @@ public final class CitizenEntity extends PathfinderMob {
 
     public CitizenStats stats() {
         return stats;
+    }
+
+    @Override
+    public void tick() {
+        super.tick();
+        if (!level().isClientSide() && ++statsTickCounter >= 200) {
+            statsTickCounter = 0;
+            stats = CitizenStatsSimulator.advance(stats, false, false, true);
+        }
     }
 
     public boolean applyResolvedProfile(String assignedUsername, ResolvedProfile profile) {
