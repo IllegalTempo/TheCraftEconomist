@@ -46,6 +46,14 @@ public final class CitizenInfoScreen extends Screen {
         y = line(graphics, "Movement speed: " + data.movementSpeed(), x, y);
         y = line(graphics, "Follow range: " + data.followRange(), x, y);
         y += 8;
+        y = line(graphics, "Hunger: " + data.hunger(), x, y);
+        y = line(graphics, "Energy: " + data.energy(), x, y);
+        y = line(graphics, "Safety: " + data.safety(), x, y);
+        y = line(graphics, "Morale: " + data.morale(), x, y);
+        y = line(graphics, "Intelligence: " + data.intelligence(), x, y);
+        y = line(graphics, "Anger: " + data.anger(), x, y);
+        y = line(graphics, "Education: " + data.education(), x, y);
+        y += 8;
         line(graphics, "Position: " + data.position(), x, y);
     }
 

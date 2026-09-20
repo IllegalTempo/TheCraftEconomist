@@ -6,6 +6,7 @@ import com.jedts.theeconomist.citizen.identity.CitizenIdentity;
 import com.jedts.theeconomist.citizen.identity.CitizenLifeStage;
 import com.jedts.theeconomist.citizen.identity.CitizenModelType;
 import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
+import com.jedts.theeconomist.citizen.stats.CitizenStats;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.PathfinderMob;
 import net.minecraft.world.entity.player.Player;
@@ -29,6 +30,7 @@ import java.util.UUID;
 
 public final class CitizenEntity extends PathfinderMob {
     private CitizenIdentity identity;
+    private CitizenStats stats = CitizenStats.defaults();
 
     public CitizenEntity(EntityType<? extends CitizenEntity> type, Level level) {
         super(type, level);
@@ -56,6 +58,10 @@ public final class CitizenEntity extends PathfinderMob {
 
     public CitizenIdentity identity() {
         return identity;
+    }
+
+    public CitizenStats stats() {
+        return stats;
     }
 
     public boolean applyResolvedProfile(String assignedUsername, ResolvedProfile profile) {
@@ -92,6 +98,19 @@ public final class CitizenEntity extends PathfinderMob {
         identity.appearance().profileId().ifPresent(value -> root.putString("ProfileId", value.toString()));
         identity.appearance().textureValue().ifPresent(value -> root.putString("TextureValue", value));
         identity.appearance().textureSignature().ifPresent(value -> root.putString("TextureSignature", value));
+        ValueOutput statRoot = output.child("TheEconomistCitizenStats");
+        statRoot.putInt("Hunger", stats.hunger());
+        statRoot.putInt("Energy", stats.energy());
+        statRoot.putInt("Safety", stats.safety());
+        statRoot.putInt("Morale", stats.morale());
+        statRoot.putInt("Intelligence", stats.intelligence());
+        statRoot.putInt("Anger", stats.anger());
+        statRoot.putInt("Education", stats.education());
+        statRoot.putInt("Ambition", stats.ambition());
+        statRoot.putInt("Thrift", stats.thrift());
+        statRoot.putInt("Bravery", stats.bravery());
+        statRoot.putInt("Sociability", stats.sociability());
+        statRoot.putInt("Loyalty", stats.loyalty());
     }
 
     @Override
@@ -115,6 +134,14 @@ public final class CitizenEntity extends PathfinderMob {
         Optional<String> signature = root.getString("TextureSignature");
         identity = new CitizenIdentity(schema, citizenId, given, family, stage, profile,
                 new CitizenAppearance(model, profileId, texture, signature));
+        ValueInput statRoot = input.childOrEmpty("TheEconomistCitizenStats");
+        stats = new CitizenStats(
+                statRoot.getIntOr("Hunger", 100), statRoot.getIntOr("Energy", 100),
+                statRoot.getIntOr("Safety", 50), statRoot.getIntOr("Morale", 50),
+                statRoot.getIntOr("Intelligence", 50), statRoot.getIntOr("Anger", 0),
+                statRoot.getIntOr("Education", 0), statRoot.getIntOr("Ambition", 50),
+                statRoot.getIntOr("Thrift", 50), statRoot.getIntOr("Bravery", 50),
+                statRoot.getIntOr("Sociability", 50), statRoot.getIntOr("Loyalty", 50));
         setCustomName(net.minecraft.network.chat.Component.literal(identity.displayName()));
         setCustomNameVisible(true);
     }

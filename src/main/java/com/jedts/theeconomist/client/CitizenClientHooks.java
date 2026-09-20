@@ -20,11 +20,19 @@ public final class CitizenClientHooks {
                 format(citizen.getHealth()) + "/" + format(citizen.getMaxHealth()),
                 format(citizen.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)),
                 format(citizen.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.FOLLOW_RANGE)),
-                citizen.getBlockX() + ", " + citizen.getBlockY() + ", " + citizen.getBlockZ());
+                citizen.getBlockX() + ", " + citizen.getBlockY() + ", " + citizen.getBlockZ(),
+                Integer.toString(identityStats(citizen).hunger()), Integer.toString(identityStats(citizen).energy()),
+                Integer.toString(identityStats(citizen).safety()), Integer.toString(identityStats(citizen).morale()),
+                Integer.toString(identityStats(citizen).intelligence()), Integer.toString(identityStats(citizen).anger()),
+                Integer.toString(identityStats(citizen).education()));
         Minecraft.getInstance().setScreenAndShow(new CitizenInfoScreen(citizen, data));
     }
 
     private static String format(double value) {
         return String.format(Locale.ROOT, "%.1f", value);
+    }
+
+    private static com.jedts.theeconomist.citizen.stats.CitizenStats identityStats(CitizenEntity citizen) {
+        return citizen.stats();
     }
 }
