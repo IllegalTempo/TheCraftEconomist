@@ -14,13 +14,14 @@ public final class CitizenClientHooks {
         CitizenEntity citizen = (CitizenEntity) entity;
         var identity = citizen.identity();
         CitizenInfoScreenData data = new CitizenInfoScreenData(
-                identity.displayName(), identity.lifeStage().name(), identity.appearance().modelType().name(),
+                citizen.getCustomName() == null ? identity.displayName() : citizen.getCustomName().getString(),
+                identity.lifeStage().name(), identity.appearance().modelType().name(),
                 identity.profileUsername().orElse("none"),
                 format(citizen.getHealth()) + "/" + format(citizen.getMaxHealth()),
                 format(citizen.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.MOVEMENT_SPEED)),
                 format(citizen.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.FOLLOW_RANGE)),
                 citizen.getBlockX() + ", " + citizen.getBlockY() + ", " + citizen.getBlockZ());
-        Minecraft.getInstance().setScreenAndShow(new CitizenInfoScreen(data));
+        Minecraft.getInstance().setScreenAndShow(new CitizenInfoScreen(citizen, data));
     }
 
     private static String format(double value) {

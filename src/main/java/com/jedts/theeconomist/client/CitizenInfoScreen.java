@@ -1,18 +1,21 @@
 package com.jedts.theeconomist.client;
 
 import com.jedts.theeconomist.citizen.info.CitizenInfoScreenData;
+import com.jedts.theeconomist.citizen.entity.CitizenEntity;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public final class CitizenInfoScreen extends Screen {
-    private static final Identifier STEVE = Identifier.fromNamespaceAndPath("minecraft", "textures/entity/player/wide/steve.png");
+    private final CitizenEntity citizen;
     private final CitizenInfoScreenData data;
 
-    public CitizenInfoScreen(CitizenInfoScreenData data) {
+    public CitizenInfoScreen(CitizenEntity citizen, CitizenInfoScreenData data) {
         super(Component.literal("Citizen information"));
+        this.citizen = citizen;
         this.data = data;
     }
 
@@ -25,9 +28,11 @@ public final class CitizenInfoScreen extends Screen {
         graphics.outline(8, 8, leftWidth - 16, height - 16, 0xFF6D8799);
         graphics.outline(leftWidth + 12, 8, width - leftWidth - 20, height - 16, 0xFF6D8799);
         graphics.centeredText(font, Component.literal("Citizen"), leftWidth / 2, 18, 0xFFFFFFFF);
-        int preview = Math.min(leftWidth - 32, 96);
-        graphics.blit(RenderPipelines.GUI_TEXTURED, STEVE, (leftWidth - preview) / 2, 48,
-                0, 0, preview, preview, 64, 64);
+        int preview = Math.min(leftWidth - 32, 128);
+        EntityRenderState renderState = minecraft.getEntityRenderDispatcher().extractEntity(citizen, delta);
+        graphics.entity(renderState, 1.0f, new Vector3f(0.0f, 0.0f, 0.0f),
+                new Quaternionf().rotateY((float) Math.PI), new Quaternionf(),
+                (leftWidth - preview) / 2, 40, preview, preview);
 
         int x = leftWidth + 28;
         int y = 24;
