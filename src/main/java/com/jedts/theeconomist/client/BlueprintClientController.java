@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -23,6 +24,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringJoiner;
 
 /** Client-only controller for blueprint design and placement sessions. */
 public final class BlueprintClientController {
@@ -32,7 +34,7 @@ public final class BlueprintClientController {
     private static BlockPos designOrigin;
     private static final Map<BlockPos, BlockState> originals = new HashMap<>();
     private static final Map<BlockPos, BlockState> fakeBlocks = new HashMap<>();
-    private static final Map<BlockPos, BlockState> previewOriginals = new HashMap<>();
+    private static final Map<BlockPos, BlockState> previewBlocks = new HashMap<>();
     private static BlockPos placementOrigin;
     private static int placementRotation;
     private static boolean previousMayFly;
@@ -82,13 +84,14 @@ public final class BlueprintClientController {
         HitResult hit = minecraft.player.pick(32.0, 0.0f, false);
         placementOrigin = hit instanceof BlockHitResult blockHit
                 ? blockHit.getBlockPos().relative(blockHit.getDirection()) : minecraft.player.blockPosition();
-        clearPlacementPreview(minecraft);
+        previewBlocks.clear();
         BlueprintPlacement placement = currentPlacement(minecraft);
         for (BlueprintBlock block : workingDesign.blocks()) {
             BlockPos world = placement.worldPosition(workingDesign, block);
-            previewOriginals.putIfAbsent(world, minecraft.level.getBlockState(world));
-            minecraft.level.setBlock(world, Blocks.STAINED_GLASS.blue().defaultBlockState(), 19);
+            BlockState state = resolveBlockState(block);
+            if (state != null) previewBlocks.put(world, state);
         }
+        renderPreviewBlocks(minecraft);
     }
 
     public static BlueprintPlacement currentPlacement(Minecraft minecraft) {
@@ -133,7 +136,7 @@ public final class BlueprintClientController {
             BlockState state = entry.getValue();
             String id = BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString();
             blocks.add(new com.jedts.theeconomist.blueprint.BlueprintBlock(entry.getKey().getX() - minX,
-                    entry.getKey().getY() - minY, entry.getKey().getZ() - minZ, id));
+                    entry.getKey().getY() - minY, entry.getKey().getZ() - minZ, id, serializeStateProperties(state)));
         }
         BlueprintDesign design = new BlueprintDesign(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1, blocks);
         BlueprintStackData.setDesigned(stack, design);
@@ -166,13 +169,65 @@ public final class BlueprintClientController {
             for (var entry : originals.entrySet()) minecraft.level.setBlock(entry.getKey(), entry.getValue(), 19);
         }
         originals.clear(); fakeBlocks.clear();
-        clearPlacementPreview(minecraft);
+        clearPlacementPreview();
     }
 
-    private static void clearPlacementPreview(Minecraft minecraft) {
-        if (minecraft.level != null) {
-            for (var entry : previewOriginals.entrySet()) minecraft.level.setBlock(entry.getKey(), entry.getValue(), 19);
+    private static void clearPlacementPreview() {
+        previewBlocks.clear();
+    }
+
+    private static BlockState resolveBlockState(BlueprintBlock block) {
+        Block resolved = BuiltInRegistries.BLOCK.getValue(Identifier.parse(block.blockId()));
+        if (resolved == null) return null;
+        BlockState state = resolved.defaultBlockState();
+        if (!block.stateProperties().isBlank()) {
+            for (String property : block.stateProperties().split(",")) {
+                String[] pair = property.split("=", 2);
+                if (pair.length == 2) state = applyProperty(state, pair[0], pair[1]);
+            }
         }
-        previewOriginals.clear();
+        return state;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String serializeStateProperties(BlockState state) {
+        StringJoiner properties = new StringJoiner(",");
+        for (Property<?> property : state.getProperties()) {
+            properties.add(serializeProperty(state, (Property) property));
+        }
+        return properties.toString();
+    }
+
+    private static <T extends Comparable<T>> String serializeProperty(BlockState state, Property<T> property) {
+        return property.getName() + "=" + property.getName(state.getValue(property));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Comparable<T>> BlockState applyProperty(BlockState state, String name, String value) {
+        Property<T> property = (Property<T>) state.getBlock().getStateDefinition().getProperty(name);
+        if (property == null) return state;
+        return property.getValue(value).map(parsed -> state.setValue(property, parsed)).orElse(state);
+    }
+
+    private static void renderPreviewBlocks(Minecraft minecraft) {
+        long liveUntil = System.currentTimeMillis() + 100L;
+        for (var entry : previewBlocks.entrySet()) {
+            BlockPos position = entry.getKey();
+            net.minecraft.client.renderer.block.MovingBlockRenderState moving =
+                    new net.minecraft.client.renderer.block.MovingBlockRenderState();
+            moving.randomSeedPos = position;
+            moving.blockPos = position;
+            moving.blockState = entry.getValue();
+            moving.biome = minecraft.level.getBiome(position);
+            moving.cardinalLighting = minecraft.level.cardinalLighting();
+            moving.lightEngine = minecraft.level.getLightEngine();
+
+            net.minecraft.client.renderer.state.level.TransientBlockRenderState transientState =
+                    new net.minecraft.client.renderer.state.level.TransientBlockRenderState();
+            transientState.movingBlockRenderState = moving;
+            transientState.createTimeNs = System.nanoTime();
+            transientState.liveUntilMs = liveUntil;
+            minecraft.levelRenderer.addTransientBlock(position.asLong(), transientState);
+        }
     }
 }
