@@ -19,6 +19,14 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
+import net.minecraft.client.renderer.block.BlockModelRenderState;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.util.ARGB;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.Vec3;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -91,7 +99,31 @@ public final class BlueprintClientController {
             BlockState state = resolveBlockState(block);
             if (state != null) previewBlocks.put(world, state);
         }
-        renderPreviewBlocks(minecraft);
+    }
+
+    public static void renderPlacementPreview(LevelRenderContext context) {
+        if (!placing || previewBlocks.isEmpty()) return;
+        Minecraft minecraft = Minecraft.getInstance();
+        if (minecraft.level == null) return;
+        Vec3 camera = context.levelState().cameraRenderState.pos;
+        var poseStack = context.poseStack();
+        for (var entry : previewBlocks.entrySet()) {
+            BlockPos position = entry.getKey();
+            BlockStateModel model = minecraft.getModelManager().getBlockStateModelSet().get(entry.getValue());
+            List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> parts = new ArrayList<>();
+            model.collectParts(RandomSource.create(position.asLong()), parts);
+            poseStack.pushPose();
+            poseStack.translate(position.getX() - camera.x, position.getY() - camera.y, position.getZ() - camera.z);
+            context.submitNodeCollector().submitBlockModel(
+                    poseStack,
+                    RenderTypes.translucentMovingBlock(),
+                    parts,
+                    BlockModelRenderState.EMPTY_TINTS,
+                    15728880,
+                    OverlayTexture.NO_OVERLAY,
+                    ARGB.color(128, 40, 130, 255));
+            poseStack.popPose();
+        }
     }
 
     public static BlueprintPlacement currentPlacement(Minecraft minecraft) {
@@ -209,25 +241,4 @@ public final class BlueprintClientController {
         return property.getValue(value).map(parsed -> state.setValue(property, parsed)).orElse(state);
     }
 
-    private static void renderPreviewBlocks(Minecraft minecraft) {
-        long liveUntil = System.currentTimeMillis() + 100L;
-        for (var entry : previewBlocks.entrySet()) {
-            BlockPos position = entry.getKey();
-            net.minecraft.client.renderer.block.MovingBlockRenderState moving =
-                    new net.minecraft.client.renderer.block.MovingBlockRenderState();
-            moving.randomSeedPos = position;
-            moving.blockPos = position;
-            moving.blockState = entry.getValue();
-            moving.biome = minecraft.level.getBiome(position);
-            moving.cardinalLighting = minecraft.level.cardinalLighting();
-            moving.lightEngine = minecraft.level.getLightEngine();
-
-            net.minecraft.client.renderer.state.level.TransientBlockRenderState transientState =
-                    new net.minecraft.client.renderer.state.level.TransientBlockRenderState();
-            transientState.movingBlockRenderState = moving;
-            transientState.createTimeNs = System.nanoTime();
-            transientState.liveUntilMs = liveUntil;
-            minecraft.levelRenderer.addTransientBlock(position.asLong(), transientState);
-        }
-    }
 }

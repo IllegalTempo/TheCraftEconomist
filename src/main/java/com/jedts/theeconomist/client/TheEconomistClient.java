@@ -10,6 +10,7 @@ import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +22,7 @@ public final class TheEconomistClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         CitizenClientRenderer.register();
+        LevelRenderEvents.AFTER_TRANSLUCENT_TERRAIN.register(BlueprintClientController::renderPlacementPreview);
         ClientPlayNetworking.registerGlobalReceiver(ContractBoardPayload.TYPE,
                 (payload, context) -> context.client().execute(() ->
                         context.client().setScreenAndShow(new ContractBoardScreen(payload))));
