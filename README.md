@@ -261,7 +261,15 @@ Potential emergencies include food or housing shortages, raids, mine accidents, 
 Crime is a later feature and must not equate poverty with criminality. Risk depends on desperation, inequality, security, trust, opportunity, and traits. Possible crimes include theft, smuggling, vandalism, and desertion.
 
 Justice policies support warnings, fines, restitution, temporary detention, and exile—never graphic punishment. Guards prefer arrest and de-escalation when dealing with citizens.
+## Building BluePrint
 
+Blueprints have three explicit states:
+
+- **Empty:** contains no captured structure.
+- **Designed:** contains the relative blocks captured during planning mode.
+- **Planned:** contains a designed structure positioned at an exact world origin, rotation, and mirror, ready for a building contract.
+
+The `Empty Blueprint` item is server-authoritative. Client proposals are bounded and revalidated before a state transition is saved. Unsafe placement targets are rejected rather than overwritten. The client planning controller and visual ghost-building controls are the next UI slice; the current foundation already provides the item, immutable design/placement data, serialization, and confirmation packet boundary.
 ## Information and interface
 
 - **Citizen panel:** household, job, needs, skills, goal, and recent concerns
