@@ -5,5 +5,7 @@
   "itemGroup.theeconomist.currency": "The Economist",
   "tag.item.theeconomist.currency": "Currency",
   "tooltip.theeconomist.crown_value.one": "Value: 1 Crown",
-  "tooltip.theeconomist.crown_value.many": "Value: %s Crowns"
+  "tooltip.theeconomist.crown_value.many": "Value: %s Crowns",
+  "item.theeconomist.empty_blueprint": "Empty Blueprint",
+  "itemGroup.theeconomist.blueprint": "Blueprints"
 }
