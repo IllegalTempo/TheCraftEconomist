@@ -2,6 +2,7 @@ package com.jedts.theeconomist.citizen.command;
 
 import com.jedts.theeconomist.citizen.CitizenRuntime;
 import com.jedts.theeconomist.contract.CitizenContract;
+import com.jedts.theeconomist.contract.board.ContractBoardService;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -22,10 +23,13 @@ public final class CitizenCommands {
 
     private static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(Commands.literal("theeconomist")
-                .requires(source -> source.permissions() instanceof LevelBasedPermissionSet permissions
-                        && permissions.level().isEqualOrHigherThan(PermissionLevel.ADMINS))
                 .then(Commands.literal("reload")
+                        .requires(source -> source.permissions() instanceof LevelBasedPermissionSet permissions
+                                && permissions.level().isEqualOrHigherThan(PermissionLevel.ADMINS))
                         .executes(context -> CitizenRuntime.reload(context.getSource())))
+                .then(Commands.literal("contracts")
+                        .requires(source -> source.getEntity() instanceof net.minecraft.server.level.ServerPlayer)
+                        .executes(context -> showContracts((net.minecraft.server.level.ServerPlayer) context.getSource().getEntity())))
                 .then(Commands.literal("contract")
                         .requires(source -> source.getEntity() != null)
                         .then(Commands.literal("service")
@@ -38,6 +42,11 @@ public final class CitizenCommands {
                                                                         IntegerArgumentType.getInteger(context, "bounty"),
                                                                         LongArgumentType.getLong(context, "deadline"),
                                                                         IntegerArgumentType.getInteger(context, "skill"))))))))));
+    }
+
+    private static int showContracts(net.minecraft.server.level.ServerPlayer player) {
+        ContractBoardService.send(player, CitizenRuntime.contracts());
+        return 1;
     }
 
     private static int createServiceContract(CommandSourceStack source, String target, int bounty,
