@@ -29,6 +29,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.network.chat.Component;
+import com.jedts.theeconomist.citizen.info.CitizenInfoPayload;
+import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -122,7 +124,16 @@ public final class CitizenEntity extends PathfinderMob {
 
     @Override
     protected InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (level().isClientSide()) {
+        if (!level().isClientSide() && player instanceof ServerPlayer serverPlayer) {
+            var contract = CitizenRuntime.contracts().activeContractFor(getUUID());
+            String status = contract.map(value -> value.status().name()).orElse("NONE");
+            String target = contract.map(value -> value.target()).orElse("");
+            int bounty = contract.map(value -> value.bounty()).orElse(0);
+            long deadline = contract.map(value -> value.deadlineTick()).orElse(0L);
+            net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking.send(serverPlayer, new CitizenInfoPayload(
+                    getId(), job.occupation().name(), job.employer(), job.wagePerDay(),
+                    job.startHour() + "-" + job.endHour(), status, target, bounty, deadline));
+        } else if (level().isClientSide()) {
             try {
                 Class<?> hooks = Class.forName("com.jedts.theeconomist.client.CitizenClientHooks");
                 hooks.getMethod("open", Object.class).invoke(null, this);

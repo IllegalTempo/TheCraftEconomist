@@ -54,6 +54,18 @@ public final class CitizenInfoScreen extends Screen {
         y = line(graphics, "Anger: " + data.anger(), x, y);
         y = line(graphics, "Education: " + data.education(), x, y);
         y += 8;
+        y = line(graphics, "Occupation: " + data.occupation(), x, y);
+        y = line(graphics, "Employer: " + (data.employer().isBlank() ? "none" : data.employer()), x, y);
+        y = line(graphics, "Wage/day: " + data.wage(), x, y);
+        y = line(graphics, "Work hours: " + (data.workHours().isBlank() ? "none" : data.workHours()), x, y);
+        y += 8;
+        y = line(graphics, "Contract: " + data.contractStatus(), x, y);
+        if (!data.contractTarget().isBlank()) {
+            y = line(graphics, "Target: " + data.contractTarget(), x, y);
+            y = line(graphics, "Bounty: " + data.contractBounty() + " Crowns", x, y);
+            y = line(graphics, "Deadline: " + data.contractDeadline(), x, y);
+        }
+        y += 8;
         line(graphics, "Position: " + data.position(), x, y);
     }
 

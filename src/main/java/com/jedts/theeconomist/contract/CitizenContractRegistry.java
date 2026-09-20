@@ -47,6 +47,13 @@ public final class CitizenContractRegistry {
                 .toList());
     }
 
+    public synchronized Optional<CitizenContract> activeContractFor(UUID worker) {
+        UUID contractId = activeByWorker.get(worker);
+        if (contractId == null) return Optional.empty();
+        CitizenContract contract = contracts.get(contractId);
+        return contract == null ? Optional.empty() : Optional.of(contract);
+    }
+
     private void cleanupExpired(long nowTick) {
         for (CitizenContract contract : contracts.values()) {
             if (contract.status() == ContractStatus.OPEN && nowTick >= contract.deadlineTick()) {
