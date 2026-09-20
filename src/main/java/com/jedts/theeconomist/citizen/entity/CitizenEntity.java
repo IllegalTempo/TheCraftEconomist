@@ -28,6 +28,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.network.chat.Component;
 
 import java.util.Optional;
 import java.util.UUID;
@@ -94,12 +95,22 @@ public final class CitizenEntity extends PathfinderMob {
         int skill = Math.max(Math.max(skills.farming(), skills.mining()), Math.max(skills.building(),
                 Math.max(skills.combat(), skills.trade())));
         CitizenRuntime.contracts().acceptBest(getUUID(), skill, level().getGameTime()).ifPresent(contract -> {
+            notifyRequester(contract);
             CitizenOccupation occupation = CitizenOccupation.fromContractTarget(contract.target());
             if (occupation != CitizenOccupation.UNEMPLOYED) {
                 job = new CitizenJob(occupation, "Contract " + contract.id(), contract.bounty(), 8, 16);
                 contract.start(getUUID());
             }
         });
+    }
+
+    private void notifyRequester(com.jedts.theeconomist.contract.CitizenContract contract) {
+        Player requester = level().getPlayerInAnyDimension(contract.requesterId());
+        if (requester == null) return;
+        String citizenName = getCustomName() == null ? getName().getString() : getCustomName().getString();
+        requester.sendSystemMessage(Component.literal(citizenName + " accepted your "
+                + contract.kind().name().toLowerCase(java.util.Locale.ROOT) + " contract for "
+                + contract.target() + " (" + contract.bounty() + " Crowns)."));
     }
 
     public boolean applyResolvedProfile(String assignedUsername, ResolvedProfile profile) {
