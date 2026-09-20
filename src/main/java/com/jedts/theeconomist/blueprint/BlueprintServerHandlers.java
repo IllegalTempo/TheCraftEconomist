@@ -36,6 +36,10 @@ public final class BlueprintServerHandlers {
             player.sendSystemMessage(Component.literal("Only a designed blueprint can be planned."));
             return;
         }
+        if (!payload.target().dimension().equals(player.level().dimension().identifier().toString())) {
+            player.sendSystemMessage(Component.literal("Placement must be in the current dimension."));
+            return;
+        }
         BlueprintValidationResult result = BlueprintValidator.validatePlacement(current.design(), payload.target(), position ->
                 !player.level().getBlockState(position).isAir());
         if (!result.valid()) { player.sendSystemMessage(Component.literal("Placement rejected: " + result.reason())); return; }

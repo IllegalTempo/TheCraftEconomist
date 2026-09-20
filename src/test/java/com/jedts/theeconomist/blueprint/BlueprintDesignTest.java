@@ -34,4 +34,13 @@ class BlueprintDesignTest {
 
         assertEquals(new BlockPos(11, 64, 20), placement.worldPosition(design, design.blocks().getFirst()));
     }
+
+    @Test
+    void placement_applies_rotation_before_mirroring() {
+        BlueprintDesign design = new BlueprintDesign(2, 1, 3,
+                List.of(new BlueprintBlock(1, 0, 2, "minecraft:stone")));
+        BlueprintPlacement placement = new BlueprintPlacement(new BlockPos(10, 64, 20), 1, false, false);
+
+        assertEquals(new BlockPos(10, 64, 21), placement.worldPosition(design, design.blocks().getFirst()));
+    }
 }

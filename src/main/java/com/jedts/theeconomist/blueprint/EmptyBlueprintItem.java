@@ -23,7 +23,11 @@ public final class EmptyBlueprintItem extends Item {
         if (level.isClientSide()) {
             try {
                 Class<?> controller = Class.forName("com.jedts.theeconomist.client.BlueprintClientController");
-                controller.getMethod(action == BlueprintItemAction.DESIGN ? "startDesign" : "startPlacement").invoke(null);
+                if (action == BlueprintItemAction.DESIGN) {
+                    controller.getMethod("startDesign").invoke(null);
+                } else {
+                    controller.getMethod("startPlacement", ItemStack.class).invoke(null, player.getItemInHand(hand));
+                }
             } catch (ReflectiveOperationException ignored) {
                 // Client-only controller is optional on a dedicated server.
             }

@@ -9,7 +9,16 @@ public final class BlueprintValidator {
 
     public static BlueprintValidationResult validateDesign(BlueprintDesign design) {
         if (design == null) return BlueprintValidationResult.rejected("missing design");
+        if (design.blocks().isEmpty()) return BlueprintValidationResult.rejected("design has no blocks");
         if (design.blocks().size() > BlueprintLimits.MAX_BLOCKS) return BlueprintValidationResult.rejected("too many blocks");
+        for (BlueprintBlock block : design.blocks()) {
+            String id = block.blockId();
+            if (!id.startsWith("minecraft:") || id.contains("command_block") || id.contains("chest")
+                    || id.contains("barrel") || id.contains("shulker") || id.contains("portal")
+                    || id.contains("redstone") || id.contains("spawner")) {
+                return BlueprintValidationResult.rejected("block is not in the approved building palette: " + id);
+            }
+        }
         return BlueprintValidationResult.accepted();
     }
 

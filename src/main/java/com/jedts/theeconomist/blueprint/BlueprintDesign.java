@@ -27,7 +27,7 @@ public record BlueprintDesign(int width, int height, int depth, List<BlueprintBl
         for (int i = 0; i < turns; i++) {
             BlueprintDesign current = result;
             List<BlueprintBlock> rotated = current.blocks.stream()
-                    .map(block -> new BlueprintBlock(current.depth - 1 - block.z(), block.y(), block.x(), block.blockId()))
+                    .map(block -> new BlueprintBlock(current.depth - 1 - block.z(), block.y(), block.x(), block.blockId(), block.stateProperties()))
                     .toList();
             result = new BlueprintDesign(current.depth, current.height, current.width, rotated);
         }

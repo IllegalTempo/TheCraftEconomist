@@ -22,11 +22,11 @@ public record BlueprintUpdatePayload(boolean placement, BlueprintDesign design, 
         buf.writeVarInt(design.width()); buf.writeVarInt(design.height()); buf.writeVarInt(design.depth());
         buf.writeVarInt(design.blocks().size());
         for (BlueprintBlock block : design.blocks()) {
-            buf.writeVarInt(block.x()); buf.writeVarInt(block.y()); buf.writeVarInt(block.z()); buf.writeUtf(block.blockId(), 256);
+            buf.writeVarInt(block.x()); buf.writeVarInt(block.y()); buf.writeVarInt(block.z()); buf.writeUtf(block.blockId(), 256); buf.writeUtf(block.stateProperties(), 256);
         }
         if (payload.placement) {
             BlueprintPlacement target = payload.target;
-            buf.writeInt(target.origin().getX()); buf.writeInt(target.origin().getY()); buf.writeInt(target.origin().getZ());
+            buf.writeUtf(target.dimension(), 128); buf.writeInt(target.origin().getX()); buf.writeInt(target.origin().getY()); buf.writeInt(target.origin().getZ());
             buf.writeVarInt(target.rotation()); buf.writeBoolean(target.mirrorX()); buf.writeBoolean(target.mirrorZ());
         }
     }
@@ -38,11 +38,11 @@ public record BlueprintUpdatePayload(boolean placement, BlueprintDesign design, 
         if (count < 0 || count > BlueprintLimits.MAX_BLOCKS) throw new IllegalArgumentException("invalid blueprint block count");
         List<BlueprintBlock> blocks = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            blocks.add(new BlueprintBlock(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(256)));
+            blocks.add(new BlueprintBlock(buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readUtf(256), buf.readUtf(256)));
         }
         BlueprintPlacement target = null;
         if (placement) {
-            target = new BlueprintPlacement(new BlockPos(buf.readInt(), buf.readInt(), buf.readInt()), buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
+            target = new BlueprintPlacement(buf.readUtf(128), new BlockPos(buf.readInt(), buf.readInt(), buf.readInt()), buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
         }
         return new BlueprintUpdatePayload(placement, new BlueprintDesign(width, height, depth, blocks), target);
     }

@@ -21,7 +21,7 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
         CompoundTag root = tag.getCompoundOrEmpty(ROOT);
         BlueprintState state = parseState(root.getStringOr("State", BlueprintState.EMPTY.name()));
         BlueprintDesign design = root.contains("Width") ? readDesign(root) : null;
-        BlueprintPlacement placement = root.contains("OriginX") ? new BlueprintPlacement(
+        BlueprintPlacement placement = root.contains("OriginX") ? new BlueprintPlacement(root.getStringOr("Dimension", "minecraft:overworld"),
                 new BlockPos(root.getIntOr("OriginX", 0), root.getIntOr("OriginY", 0), root.getIntOr("OriginZ", 0)),
                 root.getIntOr("Rotation", 0), root.getBooleanOr("MirrorX", false), root.getBooleanOr("MirrorZ", false)) : null;
         return new BlueprintStackData(state, design, placement);
@@ -47,6 +47,7 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
         if (data.design != null) writeDesign(root, data.design);
         if (data.placement != null) {
             root.putInt("OriginX", data.placement.origin().getX());
+            root.putString("Dimension", data.placement.dimension());
             root.putInt("OriginY", data.placement.origin().getY());
             root.putInt("OriginZ", data.placement.origin().getZ());
             root.putInt("Rotation", data.placement.rotation());
@@ -63,7 +64,7 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
         ListTag blocks = new ListTag();
         for (BlueprintBlock block : design.blocks()) {
             CompoundTag value = new CompoundTag();
-            value.putInt("X", block.x()); value.putInt("Y", block.y()); value.putInt("Z", block.z()); value.putString("Block", block.blockId());
+            value.putInt("X", block.x()); value.putInt("Y", block.y()); value.putInt("Z", block.z()); value.putString("Block", block.blockId()); value.putString("Properties", block.stateProperties());
             blocks.add(value);
         }
         root.put("Blocks", blocks);
@@ -72,7 +73,7 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
     private static BlueprintDesign readDesign(CompoundTag root) {
         List<BlueprintBlock> blocks = new ArrayList<>();
         for (CompoundTag value : root.getListOrEmpty("Blocks").compoundStream().toList()) {
-            blocks.add(new BlueprintBlock(value.getIntOr("X", 0), value.getIntOr("Y", 0), value.getIntOr("Z", 0), value.getStringOr("Block", "")));
+            blocks.add(new BlueprintBlock(value.getIntOr("X", 0), value.getIntOr("Y", 0), value.getIntOr("Z", 0), value.getStringOr("Block", ""), value.getStringOr("Properties", "")));
         }
         return new BlueprintDesign(root.getIntOr("Width", 1), root.getIntOr("Height", 1), root.getIntOr("Depth", 1), blocks);
     }

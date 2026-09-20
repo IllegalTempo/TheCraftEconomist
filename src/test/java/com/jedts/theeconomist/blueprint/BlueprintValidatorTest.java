@@ -22,4 +22,11 @@ class BlueprintValidatorTest {
         BlueprintPlacement placement = new BlueprintPlacement(new BlockPos(4, 70, 4), 0, false, false);
         assertFalse(BlueprintValidator.validatePlacement(design, placement, position -> true).valid());
     }
+
+    @Test
+    void rejects_empty_or_unsafe_block_palettes() {
+        assertFalse(BlueprintValidator.validateDesign(new BlueprintDesign(1, 1, 1, List.of())).valid());
+        assertFalse(BlueprintValidator.validateDesign(new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:command_block")))).valid());
+    }
 }
