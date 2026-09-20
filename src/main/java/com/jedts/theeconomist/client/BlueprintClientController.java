@@ -7,7 +7,7 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.item.ItemStack;
 import com.jedts.theeconomist.blueprint.BlueprintStackData;
 
-/** Client-only controller placeholder; rendering/input is added by the blueprint packet task. */
+/** Client-only controller for blueprint design and placement sessions. */
 public final class BlueprintClientController {
     private static boolean designing;
     private static boolean placing;
@@ -15,12 +15,19 @@ public final class BlueprintClientController {
 
     private BlueprintClientController() { }
 
-    public static void startDesign() { designing = true; placing = false; }
+    public static void startDesign() {
+        designing = true;
+        placing = false;
+        net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new BlueprintPlanningScreen(true, null));
+    }
     public static void startPlacement(ItemStack stack) {
         BlueprintStackData data = BlueprintStackData.read(stack);
         workingDesign = data.design();
         placing = workingDesign != null;
         designing = false;
+        if (placing) {
+            net.minecraft.client.Minecraft.getInstance().setScreenAndShow(new BlueprintPlanningScreen(false, workingDesign));
+        }
     }
     public static void cancel() { designing = false; placing = false; }
     public static boolean designing() { return designing; }
