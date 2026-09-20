@@ -6,6 +6,15 @@ import com.jedts.theeconomist.citizen.entity.CitizenEntity;
 import com.jedts.theeconomist.citizen.info.CitizenInfoScreenData;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.core.BlockPos;
 
 public final class TheEconomistClient implements ClientModInitializer {
     @Override
@@ -19,5 +28,44 @@ public final class TheEconomistClient implements ClientModInitializer {
             if (!(context.client().level.getEntity(payload.entityId()) instanceof CitizenEntity citizen)) return;
             CitizenClientHooks.open(citizen, payload);
         }));
+        UseItemCallback.EVENT.register((player, level, hand) -> {
+            if (!level.isClientSide()) return InteractionResult.PASS;
+            ItemStack stack = player.getItemInHand(hand);
+            if (stack.getItem() == com.jedts.theeconomist.blueprint.BlueprintItems.EMPTY_BLUEPRINT) {
+                if (BlueprintClientController.designing()) {
+                    BlueprintClientController.captureDesign(stack);
+                    return InteractionResult.SUCCESS;
+                }
+                if (BlueprintClientController.placing()) {
+                    BlueprintClientController.confirmPlacement(new com.jedts.theeconomist.blueprint.BlueprintPlacement(
+                            player.blockPosition(), 0, false, false));
+                    return InteractionResult.SUCCESS;
+                }
+            }
+            if (BlueprintClientController.designing() && stack.getItem() instanceof BlockItem blockItem
+                    && player.pick(6.0, 0.0f, false) instanceof BlockHitResult hit) {
+                BlockPos target = hit.getBlockPos().relative(hit.getDirection());
+                BlueprintClientController.placeFake(minecraft(), target, blockItem.getBlock().defaultBlockState());
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        });
+        AttackBlockCallback.EVENT.register((player, level, hand, pos, direction) -> {
+            if (level.isClientSide() && BlueprintClientController.designing()) {
+                BlueprintClientController.removeFake(minecraft(), pos);
+                return InteractionResult.SUCCESS;
+            }
+            return InteractionResult.PASS;
+        });
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            if (BlueprintClientController.designing() && client.player != null
+                    && BlueprintClientController.designOrigin() != null
+                    && BlueprintClientController.designOrigin().distSqr(client.player.blockPosition()) > 32 * 32) {
+                BlueprintClientController.cancel();
+                client.player.sendOverlayMessage(net.minecraft.network.chat.Component.literal("Design mode ended: 32-block limit reached."));
+            }
+        });
     }
+
+    private static net.minecraft.client.Minecraft minecraft() { return net.minecraft.client.Minecraft.getInstance(); }
 }
