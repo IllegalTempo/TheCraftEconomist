@@ -40,6 +40,16 @@ public final class CitizenContract {
         return new CitizenContract(id, requesterId, ContractKind.RESOURCE, target, quantity, bounty, deadlineTick, requiredSkill);
     }
 
+    static CitizenContract restore(UUID id, UUID requesterId, ContractKind kind, String target, int quantity,
+                                   int bounty, long deadlineTick, int requiredSkill, UUID workerId,
+                                   ContractStatus status, boolean bountyReserved) {
+        CitizenContract contract = new CitizenContract(id, requesterId, kind, target, quantity, bounty, deadlineTick, requiredSkill);
+        contract.workerId = workerId;
+        contract.status = Objects.requireNonNull(status);
+        contract.bountyReserved = bountyReserved;
+        return contract;
+    }
+
     public synchronized ContractResult accept(UUID worker, int skill, long nowTick) {
         if (status != ContractStatus.OPEN || worker.equals(requesterId)) return ContractResult.REJECTED;
         if (nowTick >= deadlineTick) {

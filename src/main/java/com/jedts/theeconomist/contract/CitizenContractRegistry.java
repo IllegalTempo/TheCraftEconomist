@@ -8,16 +8,32 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.server.level.ServerLevel;
 
 public final class CitizenContractRegistry {
     private final Map<UUID, CitizenContract> contracts = new HashMap<>();
     private final Map<UUID, UUID> activeByWorker = new HashMap<>();
+    private CitizenContractSavedData savedData;
+
+    public synchronized void load(ServerLevel level) {
+        savedData = level.getDataStorage().computeIfAbsent(CitizenContractSavedData.TYPE);
+        contracts.clear();
+        activeByWorker.clear();
+        for (CitizenContractSavedData.PersistedContract saved : savedData.contracts()) {
+            CitizenContract contract = CitizenContract.restore(saved.id(), saved.requester(), saved.kind(), saved.target(),
+                    saved.quantity(), saved.bounty(), saved.deadline(), saved.requiredSkill(), saved.worker().orElse(null),
+                    saved.status(), saved.bountyReserved());
+            contracts.put(contract.id(), contract);
+            contract.workerId().ifPresent(worker -> activeByWorker.put(worker, contract.id()));
+        }
+    }
 
     public synchronized void publish(CitizenContract contract) {
         Objects.requireNonNull(contract, "contract");
         if (contracts.putIfAbsent(contract.id(), contract) != null) {
             throw new IllegalArgumentException("contract id already exists: " + contract.id());
         }
+        save();
     }
 
     public synchronized Optional<CitizenContract> acceptBest(UUID worker, int skill, long nowTick) {
@@ -33,8 +49,15 @@ public final class CitizenContractRegistry {
                 .filter(contract -> contract.accept(worker, skill, nowTick) == ContractResult.ACCEPTED)
                 .map(contract -> {
                     activeByWorker.put(worker, contract.id());
+                    save();
                     return contract;
                 });
+    }
+
+    private void save() {
+        if (savedData != null) {
+            savedData.replace(contracts.values().stream().map(CitizenContractSavedData::from).toList());
+        }
     }
 
     public synchronized List<CitizenContract> openContracts() {
