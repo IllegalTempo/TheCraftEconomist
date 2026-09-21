@@ -23,7 +23,8 @@ public final class BlueprintHudOverlay {
         Minecraft minecraft = Minecraft.getInstance();
         int x = minecraft.getWindow().getGuiScaledWidth() / 2;
         int y = minecraft.getWindow().getGuiScaledHeight() - 72;
-        graphics.centeredText(minecraft.font, Component.translatable("hud.theeconomist.blueprint.rotate"),
+        graphics.centeredText(minecraft.font, Component.translatable("hud.theeconomist.blueprint.rotate",
+                        BlueprintClientKeys.ROTATE.getTranslatedKeyMessage()),
                 x, y, 0xFFFFFFFF);
     }
 }

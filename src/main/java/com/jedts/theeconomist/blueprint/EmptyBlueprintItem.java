@@ -1,5 +1,6 @@
 package com.jedts.theeconomist.blueprint;
 
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -15,6 +16,10 @@ public final class EmptyBlueprintItem extends Item {
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
         if (!level.isClientSide()) return InteractionResult.SUCCESS;
+        if (hand != InteractionHand.MAIN_HAND) {
+            player.sendOverlayMessage(Component.literal("Hold the Blueprint in your main hand."));
+            return InteractionResult.SUCCESS;
+        }
         try {
             Class<?> controller = Class.forName("com.jedts.theeconomist.client.BlueprintClientController");
             controller.getMethod("handleBlueprintUse", ItemStack.class).invoke(null, player.getItemInHand(hand));

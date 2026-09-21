@@ -40,4 +40,26 @@ class BlueprintDraftTest {
     void refuses_to_normalize_an_empty_draft() {
         assertThrows(IllegalStateException.class, () -> new BlueprintDraft().normalize());
     }
+
+    @Test
+    void rejects_an_oversized_extent_without_losing_the_existing_draft() {
+        BlueprintDraft draft = new BlueprintDraft();
+        BlueprintBlockSnapshot stone = new BlueprintBlockSnapshot("minecraft:stone", "");
+        draft.put(BlockPos.ZERO, stone);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> draft.put(new BlockPos(BlueprintLimits.MAX_DIMENSION, 0, 0), stone));
+        assertEquals(1, draft.blocks().size());
+        assertEquals(stone, draft.blocks().get(BlockPos.ZERO));
+    }
+
+    @Test
+    void accepts_the_maximum_extent() {
+        BlueprintDraft draft = new BlueprintDraft();
+        BlueprintBlockSnapshot stone = new BlueprintBlockSnapshot("minecraft:stone", "");
+        draft.put(BlockPos.ZERO, stone);
+        draft.put(new BlockPos(BlueprintLimits.MAX_DIMENSION - 1, 0, 0), stone);
+
+        assertEquals(BlueprintLimits.MAX_DIMENSION, draft.normalize().width());
+    }
 }

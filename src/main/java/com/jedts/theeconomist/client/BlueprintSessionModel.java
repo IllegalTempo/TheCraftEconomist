@@ -11,6 +11,7 @@ public final class BlueprintSessionModel {
     private final BlueprintDraft draft;
     private final BlueprintDesign design;
     private int rotation;
+    private int pendingRequestId;
 
     private BlueprintSessionModel(BlueprintSessionMode mode, BlueprintDraft draft, BlueprintDesign design) {
         this.mode = mode;
@@ -50,9 +51,22 @@ public final class BlueprintSessionModel {
         return rotation;
     }
 
+    public boolean beginRequest(int requestId) {
+        if (mode == BlueprintSessionMode.NONE || pendingRequestId != 0 || requestId == 0) return false;
+        pendingRequestId = requestId;
+        return true;
+    }
+
+    public boolean settleRequest(int requestId) {
+        if (pendingRequestId != requestId || requestId == 0) return false;
+        pendingRequestId = 0;
+        return true;
+    }
+
     public boolean cancel() {
         if (mode == BlueprintSessionMode.NONE) return false;
         mode = BlueprintSessionMode.NONE;
+        pendingRequestId = 0;
         if (draft != null) draft.clear();
         return true;
     }

@@ -12,27 +12,33 @@ import java.util.Objects;
 public final class BlueprintSoulCamera {
     private Entity previousCamera;
     private ClientInput previousInput;
+    private LocalPlayer owner;
+    private net.minecraft.world.level.Level ownerLevel;
     private ArmorStand proxy;
 
     public void attach(Minecraft minecraft) {
         LocalPlayer player = Objects.requireNonNull(minecraft.player);
         previousCamera = minecraft.getCameraEntity();
         previousInput = player.input;
+        owner = player;
+        ownerLevel = minecraft.level;
         proxy = new ArmorStand(Objects.requireNonNull(minecraft.level), player.getX(), player.getY(), player.getZ());
         proxy.setInvisible(true);
         proxy.setNoGravity(true);
         proxy.setYRot(player.getYRot());
         proxy.setXRot(player.getXRot());
+        proxy.setOldPosAndRot();
         player.input = new ClientInput();
         minecraft.setCameraEntity(proxy);
     }
 
     public void tick(Minecraft minecraft) {
         if (proxy == null || minecraft.player == null) return;
+        proxy.setOldPosAndRot();
         proxy.setYRot(minecraft.player.getYRot());
         proxy.setXRot(minecraft.player.getXRot());
         Vec3 forward = Vec3.directionFromRotation(0.0F, proxy.getYRot());
-        Vec3 right = forward.cross(new Vec3(0.0, 1.0, 0.0)).normalize();
+        Vec3 right = new Vec3(0.0, 1.0, 0.0).cross(forward).normalize();
         Vec3 motion = Vec3.ZERO;
         if (minecraft.options.keyUp.isDown()) motion = motion.add(forward);
         if (minecraft.options.keyDown.isDown()) motion = motion.subtract(forward);
@@ -46,10 +52,14 @@ public final class BlueprintSoulCamera {
     }
 
     public void detach(Minecraft minecraft) {
-        if (minecraft.player != null && previousInput != null) minecraft.player.input = previousInput;
-        if (previousCamera != null) minecraft.setCameraEntity(previousCamera);
+        boolean sameContext = minecraft.player == owner && minecraft.level == ownerLevel;
+        if (sameContext && previousInput != null) minecraft.player.input = previousInput;
+        if (sameContext && previousCamera != null) minecraft.setCameraEntity(previousCamera);
+        else if (minecraft.player != null) minecraft.setCameraEntity(minecraft.player);
         previousCamera = null;
         previousInput = null;
+        owner = null;
+        ownerLevel = null;
         proxy = null;
     }
 

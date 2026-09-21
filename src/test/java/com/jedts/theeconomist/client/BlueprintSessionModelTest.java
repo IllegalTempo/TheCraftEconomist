@@ -44,4 +44,18 @@ class BlueprintSessionModelTest {
         assertTrue(session.shouldCancel(true, true, false, false));
         assertTrue(session.shouldCancel(true, true, true, true));
     }
+
+    @Test
+    void rejected_save_keeps_the_draft_editable() {
+        BlueprintSessionModel session = BlueprintSessionModel.designing();
+        session.draft().put(net.minecraft.core.BlockPos.ZERO,
+                new com.jedts.theeconomist.blueprint.BlueprintBlockSnapshot("minecraft:stone", ""));
+
+        assertTrue(session.beginRequest(42));
+        assertFalse(session.beginRequest(43));
+        assertFalse(session.settleRequest(41));
+        assertTrue(session.settleRequest(42));
+        assertEquals(BlueprintSessionMode.DESIGN, session.mode());
+        assertFalse(session.draft().isEmpty());
+    }
 }

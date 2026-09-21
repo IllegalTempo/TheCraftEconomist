@@ -1,9 +1,12 @@
 package com.jedts.theeconomist.client;
 
 import com.jedts.theeconomist.blueprint.BlueprintBlockSnapshot;
+import com.jedts.theeconomist.blueprint.BlueprintPlacement;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.properties.Property;
 
 import java.util.Optional;
@@ -30,6 +33,18 @@ public final class BlueprintBlockStateCodec {
             state = apply(state, pair[0], pair[1]);
         }
         return Optional.of(state);
+    }
+
+    public static BlockState transform(BlockState state, BlueprintPlacement placement) {
+        BlockState transformed = state.rotate(switch (placement.rotation()) {
+            case 1 -> Rotation.CLOCKWISE_90;
+            case 2 -> Rotation.CLOCKWISE_180;
+            case 3 -> Rotation.COUNTERCLOCKWISE_90;
+            default -> Rotation.NONE;
+        });
+        if (placement.mirrorX()) transformed = transformed.mirror(Mirror.FRONT_BACK);
+        if (placement.mirrorZ()) transformed = transformed.mirror(Mirror.LEFT_RIGHT);
+        return transformed;
     }
 
     @SuppressWarnings("unchecked")

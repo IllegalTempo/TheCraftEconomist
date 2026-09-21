@@ -5,12 +5,17 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
-public record ConfirmBlueprintPlacementPayload(BlueprintPlacement placement) implements CustomPacketPayload {
+public record ConfirmBlueprintPlacementPayload(int requestId, int expectedDesignHash, BlueprintPlacement placement)
+        implements CustomPacketPayload {
     public static final Type<ConfirmBlueprintPlacementPayload> TYPE =
             CustomPacketPayload.createType(TheEconomistMod.MOD_ID + "/confirm_blueprint_placement");
     public static final StreamCodec<RegistryFriendlyByteBuf, ConfirmBlueprintPlacementPayload> CODEC =
-            StreamCodec.of((buf, payload) -> BlueprintPayloadCodec.writePlacement(buf, payload.placement()),
-                    buf -> new ConfirmBlueprintPlacementPayload(BlueprintPayloadCodec.readPlacement(buf)));
+            StreamCodec.of((buf, payload) -> {
+                buf.writeVarInt(payload.requestId());
+                buf.writeInt(payload.expectedDesignHash());
+                BlueprintPayloadCodec.writePlacement(buf, payload.placement());
+            }, buf -> new ConfirmBlueprintPlacementPayload(buf.readVarInt(), buf.readInt(),
+                    BlueprintPayloadCodec.readPlacement(buf)));
 
     @Override
     public Type<? extends CustomPacketPayload> type() {

@@ -10,5 +10,5 @@
   "itemGroup.theeconomist.blueprint": "Blueprints",
   "key.categories.theeconomist.blueprint": "Blueprint",
   "key.theeconomist.rotate_blueprint": "Rotate Blueprint",
-  "hud.theeconomist.blueprint.rotate": "R to rotate"
+  "hud.theeconomist.blueprint.rotate": "%s to rotate"
 }

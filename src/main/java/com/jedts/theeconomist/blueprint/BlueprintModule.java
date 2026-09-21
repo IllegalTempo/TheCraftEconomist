@@ -10,6 +10,8 @@ public final class BlueprintModule implements TheEconomistModule {
         PayloadTypeRegistry.serverboundPlay().register(SaveBlueprintDesignPayload.TYPE, SaveBlueprintDesignPayload.CODEC);
         PayloadTypeRegistry.serverboundPlay().register(ConfirmBlueprintPlacementPayload.TYPE,
                 ConfirmBlueprintPlacementPayload.CODEC);
+        PayloadTypeRegistry.clientboundPlay().register(BlueprintTransitionFeedbackPayload.TYPE,
+                BlueprintTransitionFeedbackPayload.CODEC);
         BlueprintServerHandlers.register();
     }
 }

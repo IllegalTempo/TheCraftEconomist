@@ -58,4 +58,19 @@ class BlueprintTransitionServiceTest {
         assertFalse(result.accepted());
         assertEquals(BlueprintState.DESIGNED, result.data().state());
     }
+
+    @Test
+    void rejects_a_same_state_blueprint_replaced_after_preview_started() {
+        BlueprintDesign previewed = DESIGN;
+        BlueprintDesign replacement = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:dirt")));
+        BlueprintStackData changed = new BlueprintStackData(BlueprintState.DESIGNED, replacement, null);
+
+        BlueprintTransitionResult result = BlueprintTransitionService.confirmPlacement(changed,
+                new BlueprintPlacement("minecraft:overworld", BlockPos.ZERO, 0, false, false),
+                "minecraft:overworld", position -> false, previewed.hashCode());
+
+        assertFalse(result.accepted());
+        assertSame(changed, result.data());
+    }
 }

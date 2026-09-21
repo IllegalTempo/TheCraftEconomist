@@ -11,7 +11,28 @@ public final class BlueprintDraft {
     private final Map<BlockPos, BlueprintBlockSnapshot> blocks = new LinkedHashMap<>();
 
     public BlueprintBlockSnapshot put(BlockPos position, BlueprintBlockSnapshot block) {
-        return blocks.put(Objects.requireNonNull(position), Objects.requireNonNull(block));
+        Objects.requireNonNull(position);
+        Objects.requireNonNull(block);
+        if (!blocks.containsKey(position) && blocks.size() >= BlueprintLimits.MAX_BLOCKS) {
+            throw new IllegalArgumentException("blueprint has reached the block limit");
+        }
+        int minX = position.getX(), maxX = minX;
+        int minY = position.getY(), maxY = minY;
+        int minZ = position.getZ(), maxZ = minZ;
+        for (BlockPos existing : blocks.keySet()) {
+            minX = Math.min(minX, existing.getX());
+            maxX = Math.max(maxX, existing.getX());
+            minY = Math.min(minY, existing.getY());
+            maxY = Math.max(maxY, existing.getY());
+            minZ = Math.min(minZ, existing.getZ());
+            maxZ = Math.max(maxZ, existing.getZ());
+        }
+        if ((long) maxX - minX >= BlueprintLimits.MAX_DIMENSION
+                || (long) maxY - minY >= BlueprintLimits.MAX_DIMENSION
+                || (long) maxZ - minZ >= BlueprintLimits.MAX_DIMENSION) {
+            throw new IllegalArgumentException("blueprint exceeds the " + BlueprintLimits.MAX_DIMENSION + "-block dimension limit");
+        }
+        return blocks.put(position, block);
     }
 
     public BlueprintBlockSnapshot remove(BlockPos position) {
