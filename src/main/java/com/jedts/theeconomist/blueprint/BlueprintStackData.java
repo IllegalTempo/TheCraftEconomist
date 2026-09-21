@@ -67,6 +67,10 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
         for (BlueprintBlock block : design.blocks()) {
             CompoundTag value = new CompoundTag();
             value.putInt("X", block.x()); value.putInt("Y", block.y()); value.putInt("Z", block.z()); value.putString("Block", block.blockId()); value.putString("Properties", block.stateProperties());
+            if (block.blockEntityData() != null) {
+                root.putInt("FormatVersion", 2);
+                value.put("BlockEntity", block.blockEntityData());
+            }
             blocks.add(value);
         }
         root.put("Blocks", blocks);
@@ -75,7 +79,9 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
     private static BlueprintDesign readDesign(CompoundTag root) {
         List<BlueprintBlock> blocks = new ArrayList<>();
         for (CompoundTag value : root.getListOrEmpty("Blocks").compoundStream().toList()) {
-            blocks.add(new BlueprintBlock(value.getIntOr("X", 0), value.getIntOr("Y", 0), value.getIntOr("Z", 0), value.getStringOr("Block", ""), value.getStringOr("Properties", "")));
+            blocks.add(new BlueprintBlock(value.getIntOr("X", 0), value.getIntOr("Y", 0), value.getIntOr("Z", 0),
+                    value.getStringOr("Block", ""), value.getStringOr("Properties", ""),
+                    value.contains("BlockEntity") ? value.getCompoundOrEmpty("BlockEntity") : null));
         }
         return new BlueprintDesign(root.getIntOr("Width", 1), root.getIntOr("Height", 1), root.getIntOr("Depth", 1), blocks);
     }

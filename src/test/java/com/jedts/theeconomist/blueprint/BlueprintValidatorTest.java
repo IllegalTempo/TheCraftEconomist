@@ -3,6 +3,7 @@ package com.jedts.theeconomist.blueprint;
 import net.minecraft.core.BlockPos;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,10 +34,28 @@ class BlueprintValidatorTest {
     }
 
     @Test
-    void rejects_empty_or_unsafe_block_palettes() {
+    void rejects_empty_design_but_accepts_previously_restricted_block_types() {
         assertFalse(BlueprintValidator.validateDesign(new BlueprintDesign(1, 1, 1, List.of())).valid());
-        assertFalse(BlueprintValidator.validateDesign(new BlueprintDesign(1, 1, 1,
+        assertTrue(BlueprintValidator.validateDesign(new BlueprintDesign(1, 1, 1,
                 List.of(new BlueprintBlock(0, 0, 0, "minecraft:command_block")))).valid());
+    }
+
+    @Test
+    void rejects_block_entity_payload_with_incompatible_type() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", "minecraft:furnace");
+        BlueprintDesign design = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:chest", "", tag)));
+        assertFalse(BlueprintValidator.validateDesign(design).valid());
+    }
+
+    @Test
+    void accepts_sign_entity_type_different_from_block_id() {
+        CompoundTag tag = new CompoundTag();
+        tag.putString("id", "minecraft:sign");
+        BlueprintDesign design = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:oak_sign", "", tag)));
+        assertTrue(BlueprintValidator.validateDesign(design).valid());
     }
 
     @Test
