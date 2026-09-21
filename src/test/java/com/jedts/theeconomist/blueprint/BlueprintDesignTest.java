@@ -43,4 +43,12 @@ class BlueprintDesignTest {
 
         assertEquals(new BlockPos(10, 64, 21), placement.worldPosition(design, design.blocks().getFirst()));
     }
+
+    @Test
+    void rotation_preserves_serialized_block_state() {
+        BlueprintDesign design = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:oak_stairs", "facing=east,half=bottom")));
+
+        assertEquals("facing=east,half=bottom", design.rotated(1).blocks().getFirst().stateProperties());
+    }
 }
