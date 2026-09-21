@@ -1,6 +1,8 @@
 package com.jedts.theeconomist.citizen.entity;
 
 import com.jedts.theeconomist.citizen.stats.CitizenSkills;
+import com.jedts.theeconomist.citizen.stats.CitizenSkill;
+import com.jedts.theeconomist.citizen.stats.CitizenSkillRegistry;
 import net.minecraft.nbt.CompoundTag;
 
 public final class CitizenSkillsNbt {
@@ -11,11 +13,9 @@ public final class CitizenSkillsNbt {
 
     public static CompoundTag write(CitizenSkills skills) {
         CompoundTag root = new CompoundTag();
-        root.putInt("Farming", skills.farming());
-        root.putInt("Mining", skills.mining());
-        root.putInt("Building", skills.building());
-        root.putInt("Combat", skills.combat());
-        root.putInt("Trade", skills.trade());
+        for (CitizenSkill skill : CitizenSkillRegistry.all()) {
+            root.putInt(skill.id(), skills.value(skill));
+        }
         CompoundTag wrapper = new CompoundTag();
         wrapper.put(ROOT, root);
         return wrapper;
@@ -23,9 +23,11 @@ public final class CitizenSkillsNbt {
 
     public static CitizenSkills read(CompoundTag wrapper) {
         CompoundTag root = wrapper.getCompound(ROOT).orElse(new CompoundTag());
-        CitizenSkills defaults = CitizenSkills.defaults();
-        return new CitizenSkills(root.getInt("Farming").orElse(defaults.farming()),
-                root.getInt("Mining").orElse(defaults.mining()), root.getInt("Building").orElse(defaults.building()),
-                root.getInt("Combat").orElse(defaults.combat()), root.getInt("Trade").orElse(defaults.trade()));
+        var values = new java.util.LinkedHashMap<CitizenSkill, Integer>();
+        for (CitizenSkill skill : CitizenSkillRegistry.all()) {
+            int value = root.getInt(skill.id()).orElse(root.getInt(skill.legacyKey()).orElse(0));
+            values.put(skill, value);
+        }
+        return CitizenSkills.fromValues(values);
     }
 }

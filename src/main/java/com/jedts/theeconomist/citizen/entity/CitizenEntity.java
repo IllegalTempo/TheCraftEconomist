@@ -8,7 +8,11 @@ import com.jedts.theeconomist.citizen.identity.CitizenModelType;
 import com.jedts.theeconomist.citizen.skin.ResolvedProfile;
 import com.jedts.theeconomist.citizen.stats.CitizenStats;
 import com.jedts.theeconomist.citizen.stats.CitizenStatsSimulator;
+import com.jedts.theeconomist.citizen.stats.CitizenStat;
+import com.jedts.theeconomist.citizen.stats.CitizenStatRegistry;
 import com.jedts.theeconomist.citizen.stats.CitizenSkills;
+import com.jedts.theeconomist.citizen.stats.CitizenSkill;
+import com.jedts.theeconomist.citizen.stats.CitizenSkillRegistry;
 import com.jedts.theeconomist.citizen.job.CitizenJob;
 import com.jedts.theeconomist.citizen.job.CitizenOccupation;
 import net.minecraft.world.entity.EntityType;
@@ -94,9 +98,7 @@ public final class CitizenEntity extends PathfinderMob {
 
     private void considerContracts() {
         if (job.occupation() != CitizenOccupation.UNEMPLOYED) return;
-        int skill = Math.max(Math.max(skills.farming(), skills.mining()), Math.max(skills.building(),
-                Math.max(skills.combat(), skills.trade())));
-        CitizenRuntime.contracts().acceptBest(getUUID(), skill, level().getGameTime()).ifPresent(contract -> {
+        CitizenRuntime.contracts().acceptBest(getUUID(), skills.highestValue(), level().getGameTime()).ifPresent(contract -> {
             notifyRequester(contract);
             CitizenOccupation occupation = CitizenOccupation.fromContractTarget(contract.target());
             if (occupation != CitizenOccupation.UNEMPLOYED) {
@@ -159,24 +161,13 @@ public final class CitizenEntity extends PathfinderMob {
         identity.appearance().textureValue().ifPresent(value -> root.putString("TextureValue", value));
         identity.appearance().textureSignature().ifPresent(value -> root.putString("TextureSignature", value));
         ValueOutput statRoot = output.child("TheEconomistCitizenStats");
-        statRoot.putInt("Hunger", stats.hunger());
-        statRoot.putInt("Energy", stats.energy());
-        statRoot.putInt("Safety", stats.safety());
-        statRoot.putInt("Morale", stats.morale());
-        statRoot.putInt("Intelligence", stats.intelligence());
-        statRoot.putInt("Anger", stats.anger());
-        statRoot.putInt("Education", stats.education());
-        statRoot.putInt("Ambition", stats.ambition());
-        statRoot.putInt("Thrift", stats.thrift());
-        statRoot.putInt("Bravery", stats.bravery());
-        statRoot.putInt("Sociability", stats.sociability());
-        statRoot.putInt("Loyalty", stats.loyalty());
+        for (CitizenStat stat : CitizenStatRegistry.all()) {
+            statRoot.putInt(stat.id(), stats.value(stat));
+        }
         ValueOutput skillRoot = output.child("TheEconomistCitizenSkills");
-        skillRoot.putInt("Farming", skills.farming());
-        skillRoot.putInt("Mining", skills.mining());
-        skillRoot.putInt("Building", skills.building());
-        skillRoot.putInt("Combat", skills.combat());
-        skillRoot.putInt("Trade", skills.trade());
+        for (CitizenSkill skill : CitizenSkillRegistry.all()) {
+            skillRoot.putInt(skill.id(), skills.value(skill));
+        }
         ValueOutput jobRoot = output.child("TheEconomistCitizenJob");
         jobRoot.putString("Occupation", job.occupation().name());
         jobRoot.putString("Employer", job.employer());
@@ -207,16 +198,17 @@ public final class CitizenEntity extends PathfinderMob {
         identity = new CitizenIdentity(schema, citizenId, given, family, stage, profile,
                 new CitizenAppearance(model, profileId, texture, signature));
         ValueInput statRoot = input.childOrEmpty("TheEconomistCitizenStats");
-        stats = new CitizenStats(
-                statRoot.getIntOr("Hunger", 100), statRoot.getIntOr("Energy", 100),
-                statRoot.getIntOr("Safety", 50), statRoot.getIntOr("Morale", 50),
-                statRoot.getIntOr("Intelligence", 50), statRoot.getIntOr("Anger", 0),
-                statRoot.getIntOr("Education", 0), statRoot.getIntOr("Ambition", 50),
-                statRoot.getIntOr("Thrift", 50), statRoot.getIntOr("Bravery", 50),
-                statRoot.getIntOr("Sociability", 50), statRoot.getIntOr("Loyalty", 50));
+        var statValues = new java.util.LinkedHashMap<CitizenStat, Integer>();
+        for (CitizenStat stat : CitizenStatRegistry.all()) {
+            statValues.put(stat, statRoot.getIntOr(stat.id(), statRoot.getIntOr(stat.legacyKey(), stat.defaultValue())));
+        }
+        stats = CitizenStats.fromValues(statValues);
         ValueInput skillRoot = input.childOrEmpty("TheEconomistCitizenSkills");
-        skills = new CitizenSkills(skillRoot.getIntOr("Farming", 0), skillRoot.getIntOr("Mining", 0),
-                skillRoot.getIntOr("Building", 0), skillRoot.getIntOr("Combat", 0), skillRoot.getIntOr("Trade", 0));
+        var skillValues = new java.util.LinkedHashMap<CitizenSkill, Integer>();
+        for (CitizenSkill skill : CitizenSkillRegistry.all()) {
+            skillValues.put(skill, skillRoot.getIntOr(skill.id(), skillRoot.getIntOr(skill.legacyKey(), 0)));
+        }
+        skills = CitizenSkills.fromValues(skillValues);
         ValueInput jobRoot = input.childOrEmpty("TheEconomistCitizenJob");
         try {
             job = new CitizenJob(com.jedts.theeconomist.citizen.job.CitizenOccupation.valueOf(

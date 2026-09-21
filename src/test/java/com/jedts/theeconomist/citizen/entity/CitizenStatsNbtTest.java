@@ -13,4 +13,14 @@ class CitizenStatsNbtTest {
         CitizenStats restored = CitizenStatsNbt.read(CitizenStatsNbt.write(stats));
         assertEquals(stats, restored);
     }
+
+    @Test
+    void reads_legacy_stat_keys() {
+        CompoundTag root = new CompoundTag();
+        root.putInt("Hunger", 31);
+        CompoundTag wrapper = new CompoundTag();
+        wrapper.put("TheEconomistCitizenStats", root);
+
+        assertEquals(31, CitizenStatsNbt.read(wrapper).hunger());
+    }
 }

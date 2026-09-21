@@ -48,6 +48,18 @@ The remapped development JAR is written to `build/libs/`. The build runs the mod
 
 Future systems should live in focused feature packages and register through a module instead of adding unrelated setup code to the Fabric entry point.
 
+### Adding a citizen skill
+
+Citizen skills are code-registered in `CitizenSkillRegistry`. Add a stable namespaced
+ID and a legacy save key to the registry's ordered list; `CitizenSkills`, training,
+highest-skill queries, and both persistence paths discover the new skill automatically.
+Use the generic `value`, `values`, and `train` APIs in new code. Keep IDs stable after
+release so existing citizen saves continue to load; missing values default to zero.
+
+Citizen stats follow the same pattern in `CitizenStatRegistry`. Each stat defines a
+stable ID, legacy save key, and default value; generic stat access and persistence
+discover newly registered stats automatically.
+
 ## Design principles
 
 1. **People, not vending machines.** Every adult has a household, job, needs, skills, money, and relationships that influence decisions.

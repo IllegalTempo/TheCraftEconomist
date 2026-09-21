@@ -12,8 +12,10 @@ public final class CitizenStatsSimulator {
         boolean deprived = hunger < 20 || energy < 20 || safety < 30;
         int morale = stats.morale() + (deprived ? -5 : 2);
         int anger = stats.anger() + (deprived ? 3 : -2);
-        return new CitizenStats(hunger, energy, safety, morale, stats.intelligence(), anger,
-                stats.education(), stats.ambition(), stats.thrift(), stats.bravery(),
-                stats.sociability(), stats.loyalty());
+        return stats.with(CitizenStatRegistry.HUNGER, hunger)
+                .with(CitizenStatRegistry.ENERGY, energy)
+                .with(CitizenStatRegistry.SAFETY, safety)
+                .with(CitizenStatRegistry.MORALE, morale)
+                .with(CitizenStatRegistry.ANGER, anger);
     }
 }
