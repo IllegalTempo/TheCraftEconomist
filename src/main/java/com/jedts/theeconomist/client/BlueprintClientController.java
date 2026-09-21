@@ -5,14 +5,15 @@ import com.jedts.theeconomist.blueprint.BlueprintBlockSnapshot;
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
 import com.jedts.theeconomist.blueprint.BlueprintItemAction;
 import com.jedts.theeconomist.blueprint.BlueprintItemBehavior;
+import com.jedts.theeconomist.blueprint.BlueprintItems;
 import com.jedts.theeconomist.blueprint.BlueprintPlacement;
 import com.jedts.theeconomist.blueprint.BlueprintSessionMode;
 import com.jedts.theeconomist.blueprint.BlueprintStackData;
 import com.jedts.theeconomist.blueprint.ConfirmBlueprintPlacementPayload;
-import com.jedts.theeconomist.blueprint.EmptyBlueprintItem;
 import com.jedts.theeconomist.blueprint.SaveBlueprintDesignPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -38,38 +39,38 @@ public final class BlueprintClientController {
     private static final Map<BlockPos, BlockState> placementRenderBlocks = new HashMap<>();
     private static String startingDimension;
     private static int blueprintSlot = -1;
-    private static BlockPos designOrigin;
+    private static boolean escapeWasDown;
 
     private BlueprintClientController() { }
 
     public static void handleBlueprintUse(ItemStack stack) {
         BlueprintStackData data = BlueprintStackData.read(stack);
-        if (session.mode() == BlueprintSessionMode.DESIGN) {
-            if (session.draft().isEmpty()) {
-                minecraft().player.sendOverlayMessage(Component.literal("Build at least one fake block first."));
-                return;
+        switch (BlueprintItemBehavior.action(data.state(), session.mode())) {
+            case SAVE_DESIGN -> {
+                if (session.draft().isEmpty()) {
+                    minecraft().player.sendOverlayMessage(Component.literal("Build at least one fake block first."));
+                    return;
+                }
+                ClientPlayNetworking.send(new SaveBlueprintDesignPayload(session.draft().normalize()));
+                cancel();
             }
-            ClientPlayNetworking.send(new SaveBlueprintDesignPayload(session.draft().normalize()));
-            cancel();
-            return;
+            case CONFIRM_PLACEMENT -> {
+                ClientPlayNetworking.send(new ConfirmBlueprintPlacementPayload(currentPlacement()));
+                cancel();
+            }
+            case DESIGN -> startDesign();
+            case PLACE -> {
+                if (data.design() != null) startPlacement(data.design());
+            }
+            case NONE -> minecraft().player.sendOverlayMessage(Component.literal("This blueprint is already planned."));
         }
-        if (session.mode() == BlueprintSessionMode.PLACEMENT) {
-            ClientPlayNetworking.send(new ConfirmBlueprintPlacementPayload(currentPlacement()));
-            cancel();
-            return;
-        }
-        BlueprintItemAction action = BlueprintItemBehavior.action(data.state());
-        if (action == BlueprintItemAction.DESIGN) startDesign();
-        else if (action == BlueprintItemAction.PLACE && data.design() != null) startPlacement(data.design());
-        else minecraft().player.sendOverlayMessage(Component.literal("This blueprint is already planned."));
     }
 
-    public static void startDesign() {
+    private static void startDesign() {
         Minecraft minecraft = minecraft();
         session = BlueprintSessionModel.designing();
         startingDimension = minecraft.level.dimension().identifier().toString();
         blueprintSlot = minecraft.player.getInventory().getSelectedSlot();
-        designOrigin = minecraft.player.blockPosition();
         designRenderBlocks.clear();
         placementRenderBlocks.clear();
         soulCamera.attach(minecraft);
@@ -81,15 +82,9 @@ public final class BlueprintClientController {
         session = BlueprintSessionModel.placing(design);
         startingDimension = minecraft.level.dimension().identifier().toString();
         blueprintSlot = minecraft.player.getInventory().getSelectedSlot();
-        designOrigin = null;
         designRenderBlocks.clear();
         refreshPlacementRenderMap();
         minecraft.player.sendOverlayMessage(Component.literal("Placement preview activated."));
-    }
-
-    public static void startPlacement(ItemStack stack) {
-        BlueprintDesign design = BlueprintStackData.read(stack).design();
-        if (design != null) startPlacement(design);
     }
 
     public static InteractionResult useBlock(BlockItem blockItem) {
@@ -111,19 +106,23 @@ public final class BlueprintClientController {
 
     public static void tick(Minecraft minecraft) {
         if (session.mode() == BlueprintSessionMode.NONE) return;
-        boolean disconnected = minecraft.getConnection() == null || minecraft.player == null || minecraft.level == null;
+        boolean escapeDown = InputConstants.isKeyDown(InputConstants.KEY_ESCAPE);
+        boolean disconnected = minecraft.player == null || minecraft.level == null;
         boolean playerAlive = !disconnected && minecraft.player.isAlive();
         boolean sameDimension = !disconnected
                 && minecraft.level.dimension().identifier().toString().equals(startingDimension);
         boolean hasRelevantBlueprint = !disconnected
-                && minecraft.player.getInventory().getSelectedSlot() == blueprintSlot
-                && minecraft.player.getMainHandItem().getItem() instanceof EmptyBlueprintItem;
-        if (session.shouldCancel(playerAlive, sameDimension, hasRelevantBlueprint, disconnected)) {
+                && blueprintSlot >= 0
+                && minecraft.player.getInventory().getItem(blueprintSlot).getItem() == BlueprintItems.EMPTY_BLUEPRINT;
+        if ((!escapeWasDown && escapeDown)
+                || session.shouldCancel(playerAlive, sameDimension, hasRelevantBlueprint, disconnected)) {
             cancel();
-            return;
+        } else if (designing()) {
+            soulCamera.tick(minecraft);
+        } else {
+            refreshPlacementRenderMap();
         }
-        if (designing()) soulCamera.tick(minecraft);
-        if (placing()) refreshPlacementRenderMap();
+        escapeWasDown = escapeDown;
     }
 
     public static void render(LevelRenderContext context) {
@@ -146,7 +145,7 @@ public final class BlueprintClientController {
         placementRenderBlocks.clear();
         startingDimension = null;
         blueprintSlot = -1;
-        designOrigin = null;
+        escapeWasDown = false;
     }
 
     public static boolean designing() {
@@ -155,48 +154,6 @@ public final class BlueprintClientController {
 
     public static boolean placing() {
         return session.mode() == BlueprintSessionMode.PLACEMENT;
-    }
-
-    public static BlockPos designOrigin() {
-        return designOrigin;
-    }
-
-    public static void captureDesign(ItemStack stack) {
-        handleBlueprintUse(stack);
-    }
-
-    public static void confirmDesign(BlueprintDesign design) {
-        ClientPlayNetworking.send(new SaveBlueprintDesignPayload(design));
-        cancel();
-    }
-
-    public static void confirmPlacement(BlueprintPlacement placement) {
-        ClientPlayNetworking.send(new ConfirmBlueprintPlacementPayload(placement));
-        cancel();
-    }
-
-    public static BlueprintPlacement currentPlacement(Minecraft ignored) {
-        return currentPlacement();
-    }
-
-    public static void updatePlacementPreview(Minecraft minecraft) {
-        tick(minecraft);
-    }
-
-    public static void renderPlacementPreview(LevelRenderContext context) {
-        render(context);
-    }
-
-    public static void placeFake(Minecraft ignored, BlockPos position, BlockState state) {
-        if (!designing()) return;
-        session.draft().put(position, BlueprintBlockStateCodec.encode(state));
-        refreshDesignRenderMap();
-    }
-
-    public static void removeFake(Minecraft ignored, BlockPos position) {
-        if (!designing()) return;
-        session.draft().remove(position);
-        refreshDesignRenderMap();
     }
 
     private static BlueprintTarget currentDesignTarget() {

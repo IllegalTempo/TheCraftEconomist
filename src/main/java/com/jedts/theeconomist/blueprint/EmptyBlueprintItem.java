@@ -1,6 +1,5 @@
 package com.jedts.theeconomist.blueprint;
 
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -15,22 +14,12 @@ public final class EmptyBlueprintItem extends Item {
 
     @Override
     public InteractionResult use(Level level, Player player, InteractionHand hand) {
-        BlueprintItemAction action = BlueprintItemBehavior.action(BlueprintStackData.read(player.getItemInHand(hand)).state());
-        if (action == BlueprintItemAction.NONE) {
-            if (!level.isClientSide()) player.sendSystemMessage(Component.literal("This blueprint is already planned."));
-            return InteractionResult.SUCCESS;
-        }
-        if (level.isClientSide()) {
-            try {
-                Class<?> controller = Class.forName("com.jedts.theeconomist.client.BlueprintClientController");
-                if (action == BlueprintItemAction.DESIGN) {
-                    controller.getMethod("startDesign").invoke(null);
-                } else {
-                    controller.getMethod("startPlacement", ItemStack.class).invoke(null, player.getItemInHand(hand));
-                }
-            } catch (ReflectiveOperationException ignored) {
-                // Client-only controller is optional on a dedicated server.
-            }
+        if (!level.isClientSide()) return InteractionResult.SUCCESS;
+        try {
+            Class<?> controller = Class.forName("com.jedts.theeconomist.client.BlueprintClientController");
+            controller.getMethod("handleBlueprintUse", ItemStack.class).invoke(null, player.getItemInHand(hand));
+        } catch (ReflectiveOperationException exception) {
+            throw new IllegalStateException("Blueprint client controller is unavailable", exception);
         }
         return InteractionResult.SUCCESS;
     }

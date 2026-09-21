@@ -7,5 +7,8 @@
   "tooltip.theeconomist.crown_value.one": "Value: 1 Crown",
   "tooltip.theeconomist.crown_value.many": "Value: %s Crowns",
   "item.theeconomist.empty_blueprint": "Empty Blueprint",
-  "itemGroup.theeconomist.blueprint": "Blueprints"
+  "itemGroup.theeconomist.blueprint": "Blueprints",
+  "key.categories.theeconomist.blueprint": "Blueprint",
+  "key.theeconomist.rotate_blueprint": "Rotate Blueprint",
+  "hud.theeconomist.blueprint.rotate": "R to rotate"
 }
