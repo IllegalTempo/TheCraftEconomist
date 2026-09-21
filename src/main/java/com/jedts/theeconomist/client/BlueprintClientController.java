@@ -14,35 +14,26 @@ import com.jedts.theeconomist.blueprint.SaveBlueprintDesignPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderContext;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.BlockModelRenderState;
-import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
+import java.util.Optional;
 
 /** Owns the client-only blueprint session. The player's body remains server-controlled and vulnerable. */
 public final class BlueprintClientController {
     private static BlueprintSessionModel session = BlueprintSessionModel.idle();
     private static final BlueprintSoulCamera soulCamera = new BlueprintSoulCamera();
+    private static final BlueprintGhostRenderer ghostRenderer = new BlueprintGhostRenderer();
     private static final Map<BlockPos, BlockState> designRenderBlocks = new HashMap<>();
     private static final Map<BlockPos, BlockState> placementRenderBlocks = new HashMap<>();
     private static String startingDimension;
@@ -103,20 +94,18 @@ public final class BlueprintClientController {
 
     public static InteractionResult useBlock(BlockItem blockItem) {
         if (!designing()) return InteractionResult.PASS;
-        BlockPos position = BlockPos.containing(soulCamera.eyePosition()
-                .add(soulCamera.lookDirection().normalize().scale(4.0)));
+        BlueprintTarget target = currentDesignTarget();
         BlockState state = blockItem.getBlock().defaultBlockState();
-        session.draft().put(position, encodeState(state));
-        designRenderBlocks.put(position, state);
+        session.draft().put(target.addPosition(), BlueprintBlockStateCodec.encode(state));
+        refreshDesignRenderMap();
         return InteractionResult.SUCCESS;
     }
 
     public static InteractionResult attack() {
         if (!designing()) return InteractionResult.PASS;
-        BlockPos position = BlockPos.containing(soulCamera.eyePosition()
-                .add(soulCamera.lookDirection().normalize().scale(4.0)));
-        session.draft().remove(position);
-        designRenderBlocks.remove(position);
+        BlueprintTarget target = currentDesignTarget();
+        if (target.removePosition() != null) session.draft().remove(target.removePosition());
+        refreshDesignRenderMap();
         return InteractionResult.SUCCESS;
     }
 
@@ -138,8 +127,8 @@ public final class BlueprintClientController {
     }
 
     public static void render(LevelRenderContext context) {
-        renderBlocks(context, designRenderBlocks);
-        renderBlocks(context, placementRenderBlocks);
+        ghostRenderer.render(context, designRenderBlocks);
+        ghostRenderer.render(context, placementRenderBlocks);
     }
 
     public static void rotatePlacement() {
@@ -200,14 +189,34 @@ public final class BlueprintClientController {
 
     public static void placeFake(Minecraft ignored, BlockPos position, BlockState state) {
         if (!designing()) return;
-        session.draft().put(position, encodeState(state));
-        designRenderBlocks.put(position, state);
+        session.draft().put(position, BlueprintBlockStateCodec.encode(state));
+        refreshDesignRenderMap();
     }
 
     public static void removeFake(Minecraft ignored, BlockPos position) {
         if (!designing()) return;
         session.draft().remove(position);
-        designRenderBlocks.remove(position);
+        refreshDesignRenderMap();
+    }
+
+    private static BlueprintTarget currentDesignTarget() {
+        Minecraft minecraft = minecraft();
+        Vec3 eye = soulCamera.eyePosition();
+        Vec3 look = soulCamera.lookDirection();
+        Vec3 end = eye.add(look.normalize().scale(6.0));
+        BlockHitResult worldHit = minecraft.level.clip(new ClipContext(eye, end,
+                ClipContext.Block.OUTLINE, ClipContext.Fluid.NONE, minecraft.player));
+        Optional<BlockHitResult> realHit = worldHit.getType() == HitResult.Type.BLOCK
+                ? Optional.of(worldHit) : Optional.empty();
+        return BlueprintTargeting.select(eye, look, 6.0, session.draft().blocks().keySet(), realHit);
+    }
+
+    private static void refreshDesignRenderMap() {
+        designRenderBlocks.clear();
+        for (Map.Entry<BlockPos, BlueprintBlockSnapshot> entry : session.draft().blocks().entrySet()) {
+            BlueprintBlockStateCodec.decode(entry.getValue())
+                    .ifPresent(state -> designRenderBlocks.put(entry.getKey(), state));
+        }
     }
 
     private static BlueprintPlacement currentPlacement() {
@@ -224,64 +233,10 @@ public final class BlueprintClientController {
         placementRenderBlocks.clear();
         BlueprintPlacement placement = currentPlacement();
         for (BlueprintBlock block : session.design().blocks()) {
-            decodeState(new BlueprintBlockSnapshot(block.blockId(), block.stateProperties()))
+            BlueprintBlockStateCodec.decode(new BlueprintBlockSnapshot(block.blockId(), block.stateProperties()))
                     .ifPresent(state -> placementRenderBlocks.put(
                             placement.worldPosition(session.design(), block), state));
         }
-    }
-
-    private static void renderBlocks(LevelRenderContext context, Map<BlockPos, BlockState> blocks) {
-        Minecraft minecraft = minecraft();
-        Vec3 camera = context.levelState().cameraRenderState.pos;
-        for (Map.Entry<BlockPos, BlockState> entry : blocks.entrySet()) {
-            BlockPos position = entry.getKey();
-            BlockStateModel model = minecraft.getModelManager().getBlockStateModelSet().get(entry.getValue());
-            List<net.minecraft.client.renderer.block.dispatch.BlockStateModelPart> parts = new ArrayList<>();
-            model.collectParts(RandomSource.create(position.asLong()), parts);
-            context.poseStack().pushPose();
-            context.poseStack().translate(position.getX() - camera.x, position.getY() - camera.y,
-                    position.getZ() - camera.z);
-            context.submitNodeCollector().submitBlockModel(context.poseStack(), RenderTypes.translucentMovingBlock(),
-                    parts, BlockModelRenderState.EMPTY_TINTS, 15728880, OverlayTexture.NO_OVERLAY,
-                    ARGB.color(128, 40, 130, 255));
-            context.poseStack().popPose();
-        }
-    }
-
-    private static BlueprintBlockSnapshot encodeState(BlockState state) {
-        StringJoiner properties = new StringJoiner(",");
-        for (Property<?> property : state.getProperties()) properties.add(encodeProperty(state, property));
-        return new BlueprintBlockSnapshot(BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString(),
-                properties.toString());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static String encodeProperty(BlockState state, Property<?> property) {
-        return encodeTypedProperty(state, (Property<? extends Comparable>) property);
-    }
-
-    private static <T extends Comparable<T>> String encodeTypedProperty(BlockState state, Property<T> property) {
-        return property.getName() + "=" + property.getName(state.getValue(property));
-    }
-
-    private static java.util.Optional<BlockState> decodeState(BlueprintBlockSnapshot snapshot) {
-        Identifier id = Identifier.tryParse(snapshot.blockId());
-        if (id == null || !BuiltInRegistries.BLOCK.containsKey(id)) return java.util.Optional.empty();
-        BlockState state = BuiltInRegistries.BLOCK.getValue(id).defaultBlockState();
-        for (String encoded : snapshot.stateProperties().split(",")) {
-            if (encoded.isBlank()) continue;
-            String[] pair = encoded.split("=", 2);
-            if (pair.length != 2) return java.util.Optional.empty();
-            state = applyProperty(state, pair[0], pair[1]);
-        }
-        return java.util.Optional.of(state);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Comparable<T>> BlockState applyProperty(BlockState state, String name, String value) {
-        Property<T> property = (Property<T>) state.getBlock().getStateDefinition().getProperty(name);
-        if (property == null) return state;
-        return property.getValue(value).map(parsed -> state.setValue(property, parsed)).orElse(state);
     }
 
     private static Minecraft minecraft() {
