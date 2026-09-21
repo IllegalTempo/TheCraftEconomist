@@ -19,16 +19,16 @@ public final class BlueprintTransitionService {
     public static BlueprintTransitionResult confirmPlacement(BlueprintStackData current, BlueprintPlacement proposed,
                                                                String currentDimension, Predicate<BlockPos> occupied) {
         return confirmPlacement(current, proposed, currentDimension, occupied,
-                current.design() == null ? 0 : current.design().hashCode());
+                current.design() == null ? "" : BlueprintDesignFingerprint.of(current.design()));
     }
 
     public static BlueprintTransitionResult confirmPlacement(BlueprintStackData current, BlueprintPlacement proposed,
                                                                String currentDimension, Predicate<BlockPos> occupied,
-                                                               int expectedDesignHash) {
+                                                               String expectedDesignFingerprint) {
         if (current.state() != BlueprintState.DESIGNED || current.design() == null) {
             return BlueprintTransitionResult.rejected(current, "blueprint is not designed");
         }
-        if (current.design().hashCode() != expectedDesignHash) {
+        if (!BlueprintDesignFingerprint.of(current.design()).equals(expectedDesignFingerprint)) {
             return BlueprintTransitionResult.rejected(current, "blueprint changed since preview started");
         }
         if (proposed == null || !proposed.dimension().equals(currentDimension)) {

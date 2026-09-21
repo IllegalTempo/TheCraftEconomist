@@ -3,6 +3,7 @@ package com.jedts.theeconomist.client;
 import com.jedts.theeconomist.blueprint.BlueprintBlock;
 import com.jedts.theeconomist.blueprint.BlueprintBlockSnapshot;
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
+import com.jedts.theeconomist.blueprint.BlueprintDesignFingerprint;
 import com.jedts.theeconomist.blueprint.BlueprintItemAction;
 import com.jedts.theeconomist.blueprint.BlueprintItemBehavior;
 import com.jedts.theeconomist.blueprint.BlueprintItems;
@@ -79,7 +80,7 @@ public final class BlueprintClientController {
                 int requestId = nextRequestId();
                 if (session.beginRequest(requestId)) {
                     ClientPlayNetworking.send(new ConfirmBlueprintPlacementPayload(requestId,
-                            session.design().hashCode(), currentPlacement()));
+                            BlueprintDesignFingerprint.of(session.design()), currentPlacement()));
                 }
             }
             case DESIGN -> startDesign();
@@ -115,6 +116,7 @@ public final class BlueprintClientController {
 
     public static InteractionResult useBlock(BlockItem blockItem) {
         if (!designing()) return InteractionResult.PASS;
+        if (!session.canEditDraft()) return InteractionResult.SUCCESS;
         BlueprintTarget target = currentDesignTarget();
         BlockState state = blockItem.getBlock().defaultBlockState();
         try {
@@ -129,6 +131,7 @@ public final class BlueprintClientController {
 
     public static InteractionResult attack() {
         if (!designing()) return InteractionResult.PASS;
+        if (!session.canEditDraft()) return InteractionResult.SUCCESS;
         BlueprintTarget target = currentDesignTarget();
         if (target.removePosition() != null) session.draft().remove(target.removePosition());
         refreshDesignRenderMap();

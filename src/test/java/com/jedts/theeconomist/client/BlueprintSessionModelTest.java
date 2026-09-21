@@ -52,9 +52,13 @@ class BlueprintSessionModelTest {
                 new com.jedts.theeconomist.blueprint.BlueprintBlockSnapshot("minecraft:stone", ""));
 
         assertTrue(session.beginRequest(42));
+        assertTrue(session.hasPendingRequest());
+        assertFalse(session.canEditDraft());
         assertFalse(session.beginRequest(43));
         assertFalse(session.settleRequest(41));
         assertTrue(session.settleRequest(42));
+        assertFalse(session.hasPendingRequest());
+        assertTrue(session.canEditDraft());
         assertEquals(BlueprintSessionMode.DESIGN, session.mode());
         assertFalse(session.draft().isEmpty());
     }

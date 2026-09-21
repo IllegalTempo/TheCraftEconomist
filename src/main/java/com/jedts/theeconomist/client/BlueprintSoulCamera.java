@@ -38,7 +38,7 @@ public final class BlueprintSoulCamera {
         proxy.setYRot(minecraft.player.getYRot());
         proxy.setXRot(minecraft.player.getXRot());
         Vec3 forward = Vec3.directionFromRotation(0.0F, proxy.getYRot());
-        Vec3 right = new Vec3(0.0, 1.0, 0.0).cross(forward).normalize();
+        Vec3 right = forward.cross(new Vec3(0.0, 1.0, 0.0)).normalize();
         Vec3 motion = Vec3.ZERO;
         if (minecraft.options.keyUp.isDown()) motion = motion.add(forward);
         if (minecraft.options.keyDown.isDown()) motion = motion.subtract(forward);

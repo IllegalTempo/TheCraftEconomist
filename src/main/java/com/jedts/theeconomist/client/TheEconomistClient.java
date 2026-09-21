@@ -13,6 +13,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
+import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.BlockItem;
@@ -48,6 +49,12 @@ public final class TheEconomistClient implements ClientModInitializer {
                     ? InteractionResult.PASS : InteractionResult.FAIL;
         });
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
+            if (level.isClientSide() && BlueprintClientController.placing()
+                    && hand == InteractionHand.MAIN_HAND
+                    && player.getItemInHand(hand).getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
+                BlueprintClientController.handleBlueprintUse(player.getItemInHand(hand));
+                return InteractionResult.FAIL;
+            }
             if (!level.isClientSide() || !BlueprintClientController.designing()) return InteractionResult.PASS;
             if (hand != InteractionHand.MAIN_HAND) return InteractionResult.FAIL;
             ItemStack stack = player.getItemInHand(hand);
@@ -57,6 +64,24 @@ public final class TheEconomistClient implements ClientModInitializer {
             }
             if (stack.getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
                 BlueprintClientController.handleBlueprintUse(stack);
+            }
+            return InteractionResult.FAIL;
+        });
+        UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
+            if (!level.isClientSide()) return InteractionResult.PASS;
+            if (BlueprintClientController.placing() && hand == InteractionHand.MAIN_HAND
+                    && player.getItemInHand(hand).getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
+                BlueprintClientController.handleBlueprintUse(player.getItemInHand(hand));
+                return InteractionResult.FAIL;
+            }
+            if (!BlueprintClientController.designing()) return InteractionResult.PASS;
+            if (hand == InteractionHand.MAIN_HAND) {
+                ItemStack stack = player.getItemInHand(hand);
+                if (stack.getItem() instanceof BlockItem blockItem) {
+                    BlueprintClientController.useBlock(blockItem);
+                } else if (stack.getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
+                    BlueprintClientController.handleBlueprintUse(stack);
+                }
             }
             return InteractionResult.FAIL;
         });

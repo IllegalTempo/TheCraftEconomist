@@ -68,7 +68,28 @@ class BlueprintTransitionServiceTest {
 
         BlueprintTransitionResult result = BlueprintTransitionService.confirmPlacement(changed,
                 new BlueprintPlacement("minecraft:overworld", BlockPos.ZERO, 0, false, false),
-                "minecraft:overworld", position -> false, previewed.hashCode());
+                "minecraft:overworld", position -> false, BlueprintDesignFingerprint.of(previewed));
+
+        assertFalse(result.accepted());
+        assertSame(changed, result.data());
+    }
+
+    @Test
+    void rejects_distinct_designs_even_when_their_java_hash_codes_collide() {
+        BlueprintDesign previewed = new BlueprintDesign(2, 32, 1, List.of(
+                new BlueprintBlock(0, 0, 0, "minecraft:stone"),
+                new BlueprintBlock(1, 31, 0, "minecraft:stone"),
+                new BlueprintBlock(0, 31, 0, "minecraft:stone")));
+        BlueprintDesign replacement = new BlueprintDesign(2, 32, 1, List.of(
+                new BlueprintBlock(0, 0, 0, "minecraft:stone"),
+                new BlueprintBlock(1, 31, 0, "minecraft:stone"),
+                new BlueprintBlock(1, 0, 0, "minecraft:stone")));
+        assertEquals(previewed.hashCode(), replacement.hashCode());
+
+        BlueprintStackData changed = new BlueprintStackData(BlueprintState.DESIGNED, replacement, null);
+        BlueprintTransitionResult result = BlueprintTransitionService.confirmPlacement(changed,
+                new BlueprintPlacement("minecraft:overworld", BlockPos.ZERO, 0, false, false),
+                "minecraft:overworld", position -> false, BlueprintDesignFingerprint.of(previewed));
 
         assertFalse(result.accepted());
         assertSame(changed, result.data());

@@ -7,7 +7,7 @@ Automated verification on 2026-09-21: `gradlew.bat test --rerun-tasks` and `grad
 - [ ] Player B damages A; A loses health and design mode exits cleanly on death.
 - [ ] Player A re-enters design mode and flies the soul viewpoint with movement and vertical controls while the body does not move.
 - [ ] Player A places, replaces, and removes private fake blocks; player B sees none of them and the real world remains unchanged.
-- [ ] While aiming at a real block or interactive block, virtual placement does not place, consume, or interact with a real-world block.
+- [ ] While aiming at a real block, interactive block, or entity such as an item frame, virtual placement does not place, consume, or interact with real-world objects.
 - [ ] Stairs, slabs, and directional blocks render with their saved models/states, blue tint, and 50 percent opacity.
 - [ ] Saving changes the held item to Designed only after the server accepts it.
 - [ ] A rejected save leaves the draft editable and the body/camera in design mode with a clear reason.

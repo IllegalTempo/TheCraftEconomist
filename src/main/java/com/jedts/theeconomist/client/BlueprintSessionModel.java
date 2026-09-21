@@ -57,6 +57,14 @@ public final class BlueprintSessionModel {
         return true;
     }
 
+    public boolean hasPendingRequest() {
+        return pendingRequestId != 0;
+    }
+
+    public boolean canEditDraft() {
+        return mode == BlueprintSessionMode.DESIGN && !hasPendingRequest();
+    }
+
     public boolean settleRequest(int requestId) {
         if (pendingRequestId != requestId || requestId == 0) return false;
         pendingRequestId = 0;

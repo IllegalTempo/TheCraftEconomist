@@ -50,7 +50,7 @@ public final class BlueprintServerHandlers {
                                 || !player.level().getWorldBorder().isWithinBounds(position)
                                 || !player.level().isLoaded(position)
                                 || !player.level().mayInteract(player, position)
-                                || !player.level().getBlockState(position).isAir(), payload.expectedDesignHash());
+                                || !player.level().getBlockState(position).isAir(), payload.expectedDesignFingerprint());
         if (!result.accepted()) {
             player.sendSystemMessage(Component.literal("Placement rejected: " + result.reason()));
             feedback(player, payload.requestId(), true, false, result.reason());
