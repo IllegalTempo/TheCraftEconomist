@@ -47,6 +47,12 @@ public final class BlueprintCapture {
                         if (state.isAir()) continue;
                         BlueprintBlockSnapshot snapshot = BlueprintBlockStateCodec.encode(state);
                         CompoundTag entityData = source.blockEntityData(pos);
+                        if (entityData != null) {
+                            entityData = entityData.copy();
+                            entityData.remove("x");
+                            entityData.remove("y");
+                            entityData.remove("z");
+                        }
                         if (entityData != null && encodedBytes(entityData) > BlueprintLimits.MAX_BLOCK_ENTITY_BYTES) {
                             return Result.reject("block entity data exceeds the size limit");
                         }

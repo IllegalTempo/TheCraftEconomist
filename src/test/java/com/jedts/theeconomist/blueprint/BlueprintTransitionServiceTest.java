@@ -3,6 +3,7 @@ package com.jedts.theeconomist.blueprint;
 import net.minecraft.core.BlockPos;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.Bootstrap;
+import net.minecraft.nbt.CompoundTag;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -93,5 +94,41 @@ class BlueprintTransitionServiceTest {
 
         assertFalse(result.accepted());
         assertSame(changed, result.data());
+    }
+
+    @Test
+    void captured_chest_data_survives_planning_and_design_rotation() {
+        CompoundTag chest = new CompoundTag();
+        chest.putString("id", "minecraft:chest");
+        chest.putString("CustomName", "Food");
+        BlueprintDesign captured = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:chest", "facing=north", chest)));
+        BlueprintPlacement placement = new BlueprintPlacement("minecraft:overworld", BlockPos.ZERO, 1, false, false);
+
+        BlueprintTransitionResult planned = BlueprintTransitionService.confirmPlacement(
+                new BlueprintStackData(BlueprintState.DESIGNED, captured, null), placement,
+                "minecraft:overworld", pos -> false, BlueprintDesignFingerprint.of(captured));
+
+        assertTrue(planned.accepted());
+        assertEquals(captured, planned.data().design());
+        assertEquals(chest, captured.rotated(1).blocks().getFirst().blockEntityData());
+    }
+
+    @Test
+    void changed_chest_contents_reject_stale_placement_fingerprint() {
+        CompoundTag oldChest = new CompoundTag();
+        oldChest.putString("id", "minecraft:chest");
+        oldChest.putString("CustomName", "Old");
+        CompoundTag newChest = oldChest.copy();
+        newChest.putString("CustomName", "New");
+        BlueprintDesign before = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:chest", "", oldChest)));
+        BlueprintDesign after = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:chest", "", newChest)));
+        BlueprintTransitionResult result = BlueprintTransitionService.confirmPlacement(
+                new BlueprintStackData(BlueprintState.DESIGNED, after, null),
+                new BlueprintPlacement("minecraft:overworld", BlockPos.ZERO, 0, false, false),
+                "minecraft:overworld", pos -> false, BlueprintDesignFingerprint.of(before));
+        assertFalse(result.accepted());
     }
 }

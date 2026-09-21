@@ -103,6 +103,29 @@ class BlueprintCaptureTest {
         assertNull(result.design());
     }
 
+    @Test
+    void capture_removes_source_world_coordinates_from_block_entity_data() {
+        World world = new World();
+        BlockPos pos = new BlockPos(20, 70, -8);
+        world.states.put(pos, Blocks.CHEST.defaultBlockState());
+        CompoundTag chest = new CompoundTag();
+        chest.putString("id", "minecraft:chest");
+        chest.putInt("x", 20);
+        chest.putInt("y", 70);
+        chest.putInt("z", -8);
+        chest.putString("CustomName", "Food");
+        world.entities.put(pos, chest);
+
+        BlueprintCapture.Result result = BlueprintCapture.capture(pos, pos, world);
+
+        assertTrue(result.accepted(), result.reason());
+        CompoundTag saved = result.design().blocks().getFirst().blockEntityData();
+        assertFalse(saved.contains("x"));
+        assertFalse(saved.contains("y"));
+        assertFalse(saved.contains("z"));
+        assertEquals("Food", saved.getStringOr("CustomName", ""));
+    }
+
     private static final class World implements BlueprintCaptureSource {
         final Map<BlockPos, BlockState> states = new HashMap<>();
         final Map<BlockPos, CompoundTag> entities = new HashMap<>();

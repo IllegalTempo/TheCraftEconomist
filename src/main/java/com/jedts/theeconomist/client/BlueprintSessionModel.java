@@ -1,7 +1,6 @@
 package com.jedts.theeconomist.client;
 
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
-import com.jedts.theeconomist.blueprint.BlueprintDraft;
 import com.jedts.theeconomist.blueprint.BlueprintSessionMode;
 import net.minecraft.core.BlockPos;
 
@@ -9,32 +8,26 @@ import java.util.Objects;
 
 public final class BlueprintSessionModel {
     private BlueprintSessionMode mode;
-    private final BlueprintDraft draft;
     private final BlueprintDesign design;
     private int rotation;
     private int pendingRequestId;
     private BlockPos firstCorner;
 
-    private BlueprintSessionModel(BlueprintSessionMode mode, BlueprintDraft draft, BlueprintDesign design) {
+    private BlueprintSessionModel(BlueprintSessionMode mode, BlueprintDesign design) {
         this.mode = mode;
-        this.draft = draft;
         this.design = design;
     }
 
     public static BlueprintSessionModel idle() {
-        return new BlueprintSessionModel(BlueprintSessionMode.NONE, null, null);
-    }
-
-    public static BlueprintSessionModel designing() {
-        return new BlueprintSessionModel(BlueprintSessionMode.DESIGN, new BlueprintDraft(), null);
+        return new BlueprintSessionModel(BlueprintSessionMode.NONE, null);
     }
 
     public static BlueprintSessionModel selecting() {
-        return new BlueprintSessionModel(BlueprintSessionMode.SELECTING, null, null);
+        return new BlueprintSessionModel(BlueprintSessionMode.SELECTING, null);
     }
 
     public static BlueprintSessionModel placing(BlueprintDesign design) {
-        return new BlueprintSessionModel(BlueprintSessionMode.PLACEMENT, null, Objects.requireNonNull(design));
+        return new BlueprintSessionModel(BlueprintSessionMode.PLACEMENT, Objects.requireNonNull(design));
     }
 
     public void rotate() {
@@ -43,10 +36,6 @@ public final class BlueprintSessionModel {
 
     public BlueprintSessionMode mode() {
         return mode;
-    }
-
-    public BlueprintDraft draft() {
-        return draft;
     }
 
     public BlueprintDesign design() {
@@ -75,10 +64,6 @@ public final class BlueprintSessionModel {
         return pendingRequestId != 0;
     }
 
-    public boolean canEditDraft() {
-        return mode == BlueprintSessionMode.DESIGN && !hasPendingRequest();
-    }
-
     public boolean settleRequest(int requestId) {
         if (pendingRequestId != requestId || requestId == 0) return false;
         pendingRequestId = 0;
@@ -90,7 +75,6 @@ public final class BlueprintSessionModel {
         mode = BlueprintSessionMode.NONE;
         pendingRequestId = 0;
         firstCorner = null;
-        if (draft != null) draft.clear();
         return true;
     }
 
