@@ -273,26 +273,25 @@ Blueprints have three explicit states:
 
 Right-clicking an empty blueprint activates client-side design mode:
 
-- The player becomes invisible and can fly.
-- Design is limited to 32 blocks from the starting point.
-- Hold any block item and right-click an existing block face.
-- A temporary blue fake block is placed on the adjacent face.
-- Right-clicking air with a block item does nothing.
+- The player's soul viewpoint detaches and can fly while the body stays at the activation position, visible and vulnerable to other players.
+- Blocks placed during design mode are private, transparent, blue-tinted previews that other players cannot see.
+- Hold any block item and right-click to place a fake block against the nearest real or fake block; when nothing is hit, the first block appears four blocks ahead.
 - Left-clicking a fake block removes it.
 - Right-clicking the blueprint again saves the structure as a Designed Blueprint.
-- All fake blocks are restored or removed when design mode ends.
+- Escape, blueprint loss, dimension change, disconnect, or death ends the session and restores normal camera/input state.
 
-The fake blocks are temporary client-side design aids. Their intended block IDs and block-state properties are captured into the blueprint; they are not treated as completed world construction.
+The fake blocks are temporary client-side design aids. Their intended block IDs and block-state properties are captured into the blueprint; they never replace world blocks or count as completed construction.
 
 ### Placement preview
 
 Right-clicking a Designed Blueprint starts placement preview:
 
+- The HUD displays "R to rotate" above the action bar.
 - The saved structure follows the player’s crosshair.
 - The preview uses the original saved block models and block states.
 - Preview rendering is visual-only and never replaces real world blocks.
 - Preview blocks update as the player aims at different positions.
-- Sprint-right-click rotates the structure by 90 degrees.
+- Pressing R rotates the structure by 90 degrees.
 - Right-click confirms the location and changes the blueprint to Planned.
 
 Preview blocks are rendered with the original model using a blue tint and 50% opacity. Previous preview positions are discarded as the preview moves, so they do not accumulate.
@@ -311,7 +310,7 @@ Each blueprint can store:
 - Mirror flags
 - Dimension
 
-The current interactive design and placement workflow saves blueprint data client-side on the item. Server-side packet handling and validation structures are present for multiplayer hardening, including block-palette validation, dimension checks, and rejection of occupied/protected placement targets; the full server-authoritative construction workflow is still a future milestone.
+Blueprint previews and design drafts exist only on the local client and never replace world blocks. Saving a design or confirming a placement sends a bounded proposal to the server, which validates the held item, lifecycle state, block palette, dimension, and destination before changing the blueprint item.
 
 ## Information and interface
 
