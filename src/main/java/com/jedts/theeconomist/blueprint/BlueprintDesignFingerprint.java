@@ -5,6 +5,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Comparator;
 import java.util.HexFormat;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 
 /** Stable, bounded digest of a design's dimensions, coordinates, IDs, and block-state properties. */
 public final class BlueprintDesignFingerprint {
@@ -27,6 +30,7 @@ public final class BlueprintDesignFingerprint {
                         addInt(digest, block.z());
                         addString(digest, block.blockId());
                         addString(digest, block.stateProperties());
+                        addTag(digest, block.blockEntityData());
                     });
             return HexFormat.of().formatHex(digest.digest());
         } catch (NoSuchAlgorithmException exception) {
@@ -45,5 +49,26 @@ public final class BlueprintDesignFingerprint {
         byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
         addInt(digest, bytes.length);
         digest.update(bytes);
+    }
+
+    private static void addTag(MessageDigest digest, Tag tag) {
+        if (tag == null) {
+            digest.update((byte) 0);
+            return;
+        }
+        digest.update(tag.getId());
+        if (tag instanceof CompoundTag compound) {
+            var keys = compound.keySet().stream().sorted().toList();
+            addInt(digest, keys.size());
+            for (String key : keys) {
+                addString(digest, key);
+                addTag(digest, compound.get(key));
+            }
+        } else if (tag instanceof ListTag list) {
+            addInt(digest, list.size());
+            for (Tag element : list) addTag(digest, element);
+        } else {
+            addString(digest, tag.toString());
+        }
     }
 }

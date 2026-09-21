@@ -4,19 +4,18 @@ import com.jedts.theeconomist.citizen.entity.CitizenEntity;
 import com.jedts.theeconomist.citizen.info.CitizenInfoPayload;
 import com.jedts.theeconomist.contract.board.ContractBoardPayload;
 import com.jedts.theeconomist.blueprint.BlueprintTransitionFeedbackPayload;
+import com.jedts.theeconomist.blueprint.BlueprintCaptureFeedbackPayload;
 import com.jedts.theeconomist.blueprint.BlueprintItems;
+import com.jedts.theeconomist.blueprint.BlueprintStackData;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
-import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
-import net.fabricmc.fabric.api.event.player.UseItemCallback;
 import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 
 public final class TheEconomistClient implements ClientModInitializer {
@@ -37,35 +36,22 @@ public final class TheEconomistClient implements ClientModInitializer {
         ClientPlayNetworking.registerGlobalReceiver(BlueprintTransitionFeedbackPayload.TYPE,
                 (payload, context) -> context.client().execute(() ->
                         BlueprintClientController.handleTransitionFeedback(payload)));
-        UseItemCallback.EVENT.register((player, level, hand) -> {
-            if (!level.isClientSide() || !BlueprintClientController.designing()) return InteractionResult.PASS;
-            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.FAIL;
-            ItemStack stack = player.getItemInHand(hand);
-            if (stack.getItem() instanceof BlockItem blockItem) {
-                BlueprintClientController.useBlock(blockItem);
-                return InteractionResult.FAIL;
-            }
-            return stack.getItem() == BlueprintItems.EMPTY_BLUEPRINT
-                    ? InteractionResult.PASS : InteractionResult.FAIL;
-        });
+        ClientPlayNetworking.registerGlobalReceiver(BlueprintCaptureFeedbackPayload.TYPE,
+                (payload, context) -> context.client().execute(() ->
+                        BlueprintClientController.handleCaptureFeedback(payload)));
         UseBlockCallback.EVENT.register((player, level, hand, hit) -> {
-            if (level.isClientSide() && BlueprintClientController.placing()
-                    && hand == InteractionHand.MAIN_HAND
-                    && player.getItemInHand(hand).getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
-                BlueprintClientController.handleBlueprintUse(player.getItemInHand(hand));
-                return InteractionResult.FAIL;
-            }
-            if (!level.isClientSide() || !BlueprintClientController.designing()) return InteractionResult.PASS;
-            if (hand != InteractionHand.MAIN_HAND) return InteractionResult.FAIL;
+            if (!level.isClientSide() || hand != InteractionHand.MAIN_HAND) return InteractionResult.PASS;
             ItemStack stack = player.getItemInHand(hand);
-            if (stack.getItem() instanceof BlockItem blockItem) {
-                BlueprintClientController.useBlock(blockItem);
+            if (stack.getItem() != BlueprintItems.EMPTY_BLUEPRINT) return InteractionResult.PASS;
+            if (BlueprintCaptureInput.consumeBlockUse(BlueprintStackData.read(stack).state(), hand)) {
+                BlueprintClientController.handleCaptureCorner(hit.getBlockPos());
                 return InteractionResult.FAIL;
             }
-            if (stack.getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
+            if (BlueprintClientController.placing() || BlueprintStackData.read(stack).design() != null) {
                 BlueprintClientController.handleBlueprintUse(stack);
+                return InteractionResult.FAIL;
             }
-            return InteractionResult.FAIL;
+            return InteractionResult.PASS;
         });
         UseEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
             if (!level.isClientSide()) return InteractionResult.PASS;
@@ -74,20 +60,7 @@ public final class TheEconomistClient implements ClientModInitializer {
                 BlueprintClientController.handleBlueprintUse(player.getItemInHand(hand));
                 return InteractionResult.FAIL;
             }
-            if (!BlueprintClientController.designing()) return InteractionResult.PASS;
-            if (hand == InteractionHand.MAIN_HAND) {
-                ItemStack stack = player.getItemInHand(hand);
-                if (stack.getItem() instanceof BlockItem blockItem) {
-                    BlueprintClientController.useBlock(blockItem);
-                } else if (stack.getItem() == BlueprintItems.EMPTY_BLUEPRINT) {
-                    BlueprintClientController.handleBlueprintUse(stack);
-                }
-            }
-            return InteractionResult.FAIL;
-        });
-        ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
-            if (!BlueprintClientController.designing()) return false;
-            return BlueprintClientController.attack() == InteractionResult.SUCCESS;
+            return InteractionResult.PASS;
         });
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             BlueprintClientKeys.tick();

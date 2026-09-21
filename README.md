@@ -277,22 +277,17 @@ Justice policies support warnings, fines, restitution, temporary detention, and 
 
 Blueprints have three explicit states:
 
-- **Empty Blueprint:** contains no captured structure and can enter design mode.
-- **Designed Blueprint:** contains the relative blocks captured during design mode and can enter placement preview.
+- **Empty Blueprint:** contains no captured structure and can select two world corners.
+- **Designed Blueprint:** contains the server-captured relative blocks and can enter placement preview.
 - **Planned Blueprint:** contains a designed structure positioned at an exact world origin, rotation, mirror setting, and dimension.
 
-### Design mode
+### Capturing a design
 
-Right-clicking an empty blueprint activates client-side design mode:
+Hold an Empty Blueprint and right-click two blocks to select opposite corners of an inclusive cuboid. The clicks can be in either order; clicking the same block twice captures a one-block design. A blue marker and HUD hint show the first corner. Right-clicking a chest selects it instead of opening it. Press Escape, switch items, die, disconnect, or change dimension to cancel the selection.
 
-- The player's soul viewpoint detaches and can fly while the body stays at the activation position, visible and vulnerable to other players.
-- Blocks placed during design mode are private, transparent, blue-tinted previews that other players cannot see.
-- Hold any block item and right-click to place a fake block against the nearest real or fake block; when nothing is hit, the first block appears four blocks ahead.
-- Left-clicking a fake block removes it.
-- Right-clicking the blueprint again saves the structure as a Designed Blueprint.
-- Escape, blueprint loss, dimension change, disconnect, or death ends the session and restores normal camera/input state.
+The server reads every non-air block inside the selected region. The design stores exact block states and available block-entity data, including chest inventory items and their components, sign text, and other persistent data. Air and entities are not captured. The server requires both corners to be within interaction reach and the whole region to be loaded, in bounds, and accessible; it rejects invalid or oversized selections without changing the item or world. Current limits are 64 blocks per axis, 4,096 selected positions, 32 KiB per block entity, and 256 KiB for the encoded design.
 
-The fake blocks are temporary client-side design aids. Their intended block IDs and block-state properties are captured into the blueprint; they never replace world blocks or count as completed construction.
+A successful capture turns the Empty Blueprint into a Designed Blueprint. Capturing records desired contents but never creates blocks or items. Future construction must supply real materials and respect server permissions.
 
 ### Placement preview
 
@@ -305,6 +300,7 @@ Right-clicking a Designed Blueprint starts placement preview:
 - Preview blocks update as the player aims at different positions.
 - Pressing R rotates the structure by 90 degrees.
 - Right-click confirms the location and changes the blueprint to Planned.
+- Holding a Planned Blueprint shows its saved blocks at the planned location in the matching dimension.
 
 Preview blocks are rendered with the original model using a blue tint and 50% opacity. Previous preview positions are discarded as the preview moves, so they do not accumulate.
 
@@ -317,12 +313,13 @@ Each blueprint can store:
 - Relative block positions
 - Block IDs
 - Block-state properties such as facing, slab type, and orientation
+- Block-entity data such as container contents and sign text
 - Planned origin
 - Rotation
 - Mirror flags
 - Dimension
 
-Blueprint previews and design drafts exist only on the local client and never replace world blocks. Saving a design or confirming a placement sends a bounded proposal to the server, which validates the held item, lifecycle state, block palette, dimension, and destination before changing the blueprint item.
+Selection markers and placement previews exist only on the local client and never replace world blocks. The client sends only corner intent; the server captures the structure itself. Confirming placement sends a bounded proposal that the server validates against the held item, dimension, and destination. Planned blueprints retain contents as data without materializing them.
 
 ## Information and interface
 

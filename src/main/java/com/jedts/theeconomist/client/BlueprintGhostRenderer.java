@@ -26,6 +26,12 @@ public final class BlueprintGhostRenderer {
             BlockStateModel model = minecraft.getModelManager().getBlockStateModelSet().get(entry.getValue());
             List<BlockStateModelPart> parts = new ArrayList<>();
             model.collectParts(RandomSource.create(position.asLong()), parts);
+            if (parts.isEmpty()) {
+                BlockState fallback = BlueprintGhostFallback.renderState(entry.getValue(), true);
+                minecraft.getModelManager().getBlockStateModelSet().get(fallback)
+                        .collectParts(RandomSource.create(position.asLong()), parts);
+            }
+            if (parts.isEmpty()) continue;
             context.poseStack().pushPose();
             context.poseStack().translate(position.getX() - camera.x, position.getY() - camera.y,
                     position.getZ() - camera.z);

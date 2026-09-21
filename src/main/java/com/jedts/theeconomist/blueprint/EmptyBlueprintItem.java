@@ -20,6 +20,10 @@ public final class EmptyBlueprintItem extends Item {
             player.sendOverlayMessage(Component.literal("Hold the Blueprint in your main hand."));
             return InteractionResult.SUCCESS;
         }
+        if (BlueprintStackData.read(player.getItemInHand(hand)).state() == BlueprintState.EMPTY) {
+            player.sendOverlayMessage(Component.literal("Right-click a block for each blueprint corner."));
+            return InteractionResult.SUCCESS;
+        }
         try {
             Class<?> controller = Class.forName("com.jedts.theeconomist.client.BlueprintClientController");
             controller.getMethod("handleBlueprintUse", ItemStack.class).invoke(null, player.getItemInHand(hand));

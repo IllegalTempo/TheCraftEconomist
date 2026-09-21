@@ -18,12 +18,6 @@ public final class BlueprintValidator {
         for (BlueprintBlock block : design.blocks()) {
             BlueprintValidationResult blockResult = validateBlock(block);
             if (!blockResult.valid()) return blockResult;
-            String id = block.blockId();
-            if (id.contains("command_block") || id.contains("chest")
-                    || id.contains("barrel") || id.contains("shulker") || id.contains("portal")
-                    || id.contains("redstone") || id.contains("spawner")) {
-                return BlueprintValidationResult.rejected("block is not in the approved building palette: " + id);
-            }
         }
         return BlueprintValidationResult.accepted();
     }
@@ -34,6 +28,13 @@ public final class BlueprintValidator {
             return BlueprintValidationResult.rejected("unknown block id: " + block.blockId());
         }
         BlockState state = BuiltInRegistries.BLOCK.getValue(id).defaultBlockState();
+        if (block.blockEntityData() != null) {
+            Identifier entityId = Identifier.tryParse(block.blockEntityData().getStringOr("id", ""));
+            if (entityId == null || !BuiltInRegistries.BLOCK_ENTITY_TYPE.containsKey(entityId)
+                    || !BuiltInRegistries.BLOCK_ENTITY_TYPE.getValue(entityId).isValid(state)) {
+                return BlueprintValidationResult.rejected("block entity type does not match block: " + block.blockId());
+            }
+        }
         for (String encoded : block.stateProperties().split(",")) {
             if (encoded.isBlank()) continue;
             String[] pair = encoded.split("=", 2);
