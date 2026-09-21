@@ -29,18 +29,17 @@ public record BlueprintStackData(BlueprintState state, BlueprintDesign design, B
     }
 
     public static void setDesigned(ItemStack stack, BlueprintDesign design) {
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal(BlueprintDisplayName.forState(BlueprintState.DESIGNED)));
         write(stack, new BlueprintStackData(BlueprintState.DESIGNED, design, null));
     }
 
     public static void setPlanned(ItemStack stack, BlueprintPlacement placement) {
         BlueprintStackData current = read(stack);
         if (current.design == null) throw new IllegalStateException("cannot plan an empty blueprint");
-        stack.set(DataComponents.CUSTOM_NAME, Component.literal(BlueprintDisplayName.forState(BlueprintState.PLANNED)));
         write(stack, new BlueprintStackData(BlueprintState.PLANNED, current.design, placement));
     }
 
-    private static void write(ItemStack stack, BlueprintStackData data) {
+    public static void write(ItemStack stack, BlueprintStackData data) {
+        stack.set(DataComponents.CUSTOM_NAME, Component.literal(BlueprintDisplayName.forState(data.state())));
         CustomData.set(DataComponents.CUSTOM_DATA, stack, writeTag(data));
     }
 

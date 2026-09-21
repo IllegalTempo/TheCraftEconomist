@@ -3,7 +3,8 @@ package com.jedts.theeconomist.client;
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
 import com.jedts.theeconomist.blueprint.BlueprintBlock;
 import com.jedts.theeconomist.blueprint.BlueprintPlacement;
-import com.jedts.theeconomist.blueprint.BlueprintUpdatePayload;
+import com.jedts.theeconomist.blueprint.ConfirmBlueprintPlacementPayload;
+import com.jedts.theeconomist.blueprint.SaveBlueprintDesignPayload;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.minecraft.world.item.ItemStack;
 import com.jedts.theeconomist.blueprint.BlueprintStackData;
@@ -139,15 +140,12 @@ public final class BlueprintClientController {
 
     public static void confirmDesign(BlueprintDesign design) {
         workingDesign = design;
-        ClientPlayNetworking.send(new BlueprintUpdatePayload(false, design, null));
+        ClientPlayNetworking.send(new SaveBlueprintDesignPayload(design));
     }
 
     public static void confirmPlacement(BlueprintPlacement placement) {
         if (workingDesign == null) return;
-        Minecraft minecraft = Minecraft.getInstance();
-        ItemStack stack = minecraft.player.getMainHandItem();
-        BlueprintStackData.setPlanned(stack, placement);
-        minecraft.player.sendOverlayMessage(Component.literal("Blueprint planned."));
+        ClientPlayNetworking.send(new ConfirmBlueprintPlacementPayload(placement));
         cancel();
     }
 
@@ -171,9 +169,8 @@ public final class BlueprintClientController {
                     entry.getKey().getY() - minY, entry.getKey().getZ() - minZ, id, serializeStateProperties(state)));
         }
         BlueprintDesign design = new BlueprintDesign(maxX - minX + 1, maxY - minY + 1, maxZ - minZ + 1, blocks);
-        BlueprintStackData.setDesigned(stack, design);
-        workingDesign = design;
-        Minecraft.getInstance().player.sendOverlayMessage(Component.literal("Blueprint designed and saved on client."));
+        confirmDesign(design);
+        Minecraft.getInstance().player.sendOverlayMessage(Component.literal("Blueprint design submitted."));
         cancel();
     }
 
