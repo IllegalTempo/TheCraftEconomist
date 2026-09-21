@@ -261,15 +261,58 @@ Potential emergencies include food or housing shortages, raids, mine accidents, 
 Crime is a later feature and must not equate poverty with criminality. Risk depends on desperation, inequality, security, trust, opportunity, and traits. Possible crimes include theft, smuggling, vandalism, and desertion.
 
 Justice policies support warnings, fines, restitution, temporary detention, and exile—never graphic punishment. Guards prefer arrest and de-escalation when dealing with citizens.
-## Building BluePrint
+## Blueprint system
 
 Blueprints have three explicit states:
 
-- **Empty:** contains no captured structure.
-- **Designed:** contains the relative blocks captured during planning mode.
-- **Planned:** contains a designed structure positioned at an exact world origin, rotation, and mirror, ready for a building contract.
+- **Empty Blueprint:** contains no captured structure and can enter design mode.
+- **Designed Blueprint:** contains the relative blocks captured during design mode and can enter placement preview.
+- **Planned Blueprint:** contains a designed structure positioned at an exact world origin, rotation, mirror setting, and dimension.
 
-The `Empty Blueprint` item is server-authoritative. Client proposals are bounded and revalidated before a state transition is saved. Unsafe placement targets are rejected rather than overwritten. The client planning controller and visual ghost-building controls are the next UI slice; the current foundation already provides the item, immutable design/placement data, serialization, and confirmation packet boundary.
+### Design mode
+
+Right-clicking an empty blueprint activates client-side design mode:
+
+- The player becomes invisible and can fly.
+- Design is limited to 32 blocks from the starting point.
+- Hold any block item and right-click an existing block face.
+- A temporary blue fake block is placed on the adjacent face.
+- Right-clicking air with a block item does nothing.
+- Left-clicking a fake block removes it.
+- Right-clicking the blueprint again saves the structure as a Designed Blueprint.
+- All fake blocks are restored or removed when design mode ends.
+
+The fake blocks are temporary client-side design aids. Their intended block IDs and block-state properties are captured into the blueprint; they are not treated as completed world construction.
+
+### Placement preview
+
+Right-clicking a Designed Blueprint starts placement preview:
+
+- The saved structure follows the player’s crosshair.
+- The preview uses the original saved block models and block states.
+- Preview rendering is visual-only and never replaces real world blocks.
+- Preview blocks update as the player aims at different positions.
+- Sprint-right-click rotates the structure by 90 degrees.
+- Right-click confirms the location and changes the blueprint to Planned.
+
+Preview blocks are rendered with the original model using a blue tint and 50% opacity. Previous preview positions are discarded as the preview moves, so they do not accumulate.
+
+### Stored blueprint data
+
+Each blueprint can store:
+
+- Lifecycle state
+- Structure width, height, and depth
+- Relative block positions
+- Block IDs
+- Block-state properties such as facing, slab type, and orientation
+- Planned origin
+- Rotation
+- Mirror flags
+- Dimension
+
+The current interactive design and placement workflow saves blueprint data client-side on the item. Server-side packet handling and validation structures are present for multiplayer hardening, including block-palette validation, dimension checks, and rejection of occupied/protected placement targets; the full server-authoritative construction workflow is still a future milestone.
+
 ## Information and interface
 
 - **Citizen panel:** household, job, needs, skills, goal, and recent concerns
