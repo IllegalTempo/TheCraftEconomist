@@ -3,6 +3,7 @@ package com.jedts.theeconomist.client;
 import com.jedts.theeconomist.blueprint.BlueprintDesign;
 import com.jedts.theeconomist.blueprint.BlueprintDraft;
 import com.jedts.theeconomist.blueprint.BlueprintSessionMode;
+import net.minecraft.core.BlockPos;
 
 import java.util.Objects;
 
@@ -12,6 +13,7 @@ public final class BlueprintSessionModel {
     private final BlueprintDesign design;
     private int rotation;
     private int pendingRequestId;
+    private BlockPos firstCorner;
 
     private BlueprintSessionModel(BlueprintSessionMode mode, BlueprintDraft draft, BlueprintDesign design) {
         this.mode = mode;
@@ -25,6 +27,10 @@ public final class BlueprintSessionModel {
 
     public static BlueprintSessionModel designing() {
         return new BlueprintSessionModel(BlueprintSessionMode.DESIGN, new BlueprintDraft(), null);
+    }
+
+    public static BlueprintSessionModel selecting() {
+        return new BlueprintSessionModel(BlueprintSessionMode.SELECTING, null, null);
     }
 
     public static BlueprintSessionModel placing(BlueprintDesign design) {
@@ -45,6 +51,14 @@ public final class BlueprintSessionModel {
 
     public BlueprintDesign design() {
         return design;
+    }
+
+    public BlockPos firstCorner() {
+        return firstCorner;
+    }
+
+    public void firstCorner(BlockPos corner) {
+        if (mode == BlueprintSessionMode.SELECTING) firstCorner = corner;
     }
 
     public int rotation() {
@@ -75,6 +89,7 @@ public final class BlueprintSessionModel {
         if (mode == BlueprintSessionMode.NONE) return false;
         mode = BlueprintSessionMode.NONE;
         pendingRequestId = 0;
+        firstCorner = null;
         if (draft != null) draft.clear();
         return true;
     }
