@@ -51,4 +51,20 @@ class BlueprintPlannedPreviewTest {
                 new BlueprintStackData(BlueprintState.DESIGNED, design, null),
                 "minecraft:overworld").isEmpty());
     }
+
+    @Test
+    void single_chest_reaches_both_placement_and_planned_preview_maps() {
+        BlueprintDesign design = new BlueprintDesign(1, 1, 1,
+                List.of(new BlueprintBlock(0, 0, 0, "minecraft:chest")));
+        BlockPos origin = new BlockPos(10, 64, 20);
+        BlueprintPlacement placement = new BlueprintPlacement("minecraft:overworld", origin,
+                0, false, false);
+
+        assertEquals(Blocks.CHEST.defaultBlockState(),
+                BlueprintPlannedPreview.project(design, placement).get(origin));
+        assertEquals(Blocks.CHEST.defaultBlockState(),
+                BlueprintPlannedPreview.blocksFor(
+                        new BlueprintStackData(BlueprintState.PLANNED, design, placement),
+                        "minecraft:overworld").get(origin));
+    }
 }

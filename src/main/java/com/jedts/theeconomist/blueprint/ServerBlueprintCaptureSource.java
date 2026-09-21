@@ -36,6 +36,7 @@ public final class ServerBlueprintCaptureSource implements BlueprintCaptureSourc
 
     @Override public CompoundTag blockEntityData(BlockPos pos) {
         BlockEntity entity = level.getBlockEntity(pos);
-        return entity == null ? null : entity.saveWithFullMetadata(level.registryAccess());
+        return entity == null ? null : BlueprintBlockEntitySerialization.save(level.registryAccess(),
+                entity::saveWithFullMetadata);
     }
 }

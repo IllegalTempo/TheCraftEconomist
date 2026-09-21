@@ -104,6 +104,30 @@ class BlueprintCaptureTest {
     }
 
     @Test
+    void rejects_oversized_nested_inventory_data() {
+        World world = new World();
+        BlockPos pos = new BlockPos(4, 70, 4);
+        world.states.put(pos, Blocks.CHEST.defaultBlockState());
+        CompoundTag chest = new CompoundTag();
+        chest.putString("id", "minecraft:chest");
+        ListTag items = new ListTag();
+        for (int index = 0; index < 100; index++) {
+            CompoundTag item = new CompoundTag();
+            item.putString("id", "minecraft:written_book");
+            item.putString("pages", "x".repeat(500));
+            items.add(item);
+        }
+        chest.put("Items", items);
+        world.entities.put(pos, chest);
+
+        BlueprintCapture.Result result = BlueprintCapture.capture(pos, pos, world);
+
+        assertFalse(result.accepted());
+        assertNull(result.design());
+        assertTrue(result.reason().contains("size limit"), result.reason());
+    }
+
+    @Test
     void capture_removes_source_world_coordinates_from_block_entity_data() {
         World world = new World();
         BlockPos pos = new BlockPos(20, 70, -8);

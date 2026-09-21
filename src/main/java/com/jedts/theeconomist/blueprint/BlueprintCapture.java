@@ -6,9 +6,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,21 +47,23 @@ public final class BlueprintCapture {
                         if (state.isAir()) continue;
                         BlueprintBlockSnapshot snapshot = BlueprintBlockStateCodec.encode(state);
                         CompoundTag entityData = source.blockEntityData(pos);
+                        int entityBytes = 0;
                         if (entityData != null) {
+                            entityBytes = encodedBytes(entityData, BlueprintLimits.MAX_BLOCK_ENTITY_BYTES);
+                            if (entityBytes > BlueprintLimits.MAX_BLOCK_ENTITY_BYTES) {
+                                return Result.reject("block entity data exceeds the size limit");
+                            }
                             entityData = entityData.copy();
                             entityData.remove("x");
                             entityData.remove("y");
                             entityData.remove("z");
-                        }
-                        if (entityData != null && encodedBytes(entityData) > BlueprintLimits.MAX_BLOCK_ENTITY_BYTES) {
-                            return Result.reject("block entity data exceeds the size limit");
                         }
                         BlueprintBlock block = new BlueprintBlock(x - minX, y - minY, z - minZ,
                                 snapshot.blockId(), snapshot.stateProperties(), entityData);
                         blocks.add(block);
                         if (blocks.size() > BlueprintLimits.MAX_BLOCKS) return Result.reject("too many blocks");
                         approximateBytes += 48 + block.blockId().length() * 3 + block.stateProperties().length() * 3
-                                + (entityData == null ? 0 : encodedBytes(entityData));
+                                + entityBytes;
                         if (approximateBytes > BlueprintLimits.MAX_DESIGN_BYTES) {
                             return Result.reject("blueprint data exceeds the size limit");
                         }
@@ -73,7 +75,8 @@ public final class BlueprintCapture {
             BlueprintValidationResult validation = BlueprintValidator.validateDesign(design);
             if (!validation.valid()) return Result.reject(validation.reason());
             if (encodedBytes(BlueprintStackData.writeTag(
-                    new BlueprintStackData(BlueprintState.DESIGNED, design, null)))
+                    new BlueprintStackData(BlueprintState.DESIGNED, design, null)),
+                    BlueprintLimits.MAX_DESIGN_BYTES)
                     > BlueprintLimits.MAX_DESIGN_BYTES) {
                 return Result.reject("blueprint data exceeds the size limit");
             }
@@ -83,9 +86,31 @@ public final class BlueprintCapture {
         }
     }
 
-    private static int encodedBytes(CompoundTag tag) throws IOException {
-        ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        NbtIo.write(tag, new DataOutputStream(bytes));
-        return bytes.size();
+    private static int encodedBytes(CompoundTag tag, int limit) throws IOException {
+        CountingOutputStream counter = new CountingOutputStream(limit);
+        try {
+            NbtIo.write(tag, new DataOutputStream(counter));
+            return counter.bytes;
+        } catch (LimitExceededException exception) {
+            return limit + 1;
+        }
     }
+
+    private static final class CountingOutputStream extends OutputStream {
+        private final int limit;
+        private int bytes;
+
+        private CountingOutputStream(int limit) { this.limit = limit; }
+
+        @Override public void write(int value) throws IOException { count(1); }
+
+        @Override public void write(byte[] data, int offset, int length) throws IOException { count(length); }
+
+        private void count(int amount) throws IOException {
+            if (amount > limit - bytes) throw new LimitExceededException();
+            bytes += amount;
+        }
+    }
+
+    private static final class LimitExceededException extends IOException { }
 }
