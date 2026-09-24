@@ -1,0 +1,160 @@
+{
+  "profileUsernames": ["Notch", "jeb_", "Dream", "Technoblade", "Grian", "CaptainSparklez", "MumboJumbo", "Philza"],
+  "givenNames": ["Amina", "Diego", "Haruto", "Leila", "Mateo", "Mei", "Nia", "Noor", "Priya", "Sofia", "Tariq", "Yuna"],
+  "familyNames": ["Adebayo", "Dubois", "Garcia", "Haddad", "Ivanov", "Kim", "Nakamura", "Okafor", "Patel", "Silva", "Singh", "Wang"],
+  "decisionScoring": {
+    "costPenalty": 20.0,
+    "riskPenalty": 20.0,
+    "switchingMargin": 5.0,
+    "statScale": 100.0,
+    "actions": {
+      "confused": {
+        "cost": 0.1,
+        "risk": 0.0,
+        "capability": 1.0,
+        "urgency": 0.8,
+        "benefit": 0.65,
+        "opportunity": 1.0
+      },
+      "contract": {
+        "urgencyAmbition": 0.4,
+        "capabilityBase": 0.75,
+        "capabilityCannotWork": 0.6,
+        "routineOpportunity": 0.45,
+        "deadlineScale": 200.0,
+        "capabilityAmbition": 0.25,
+        "reviewIntervalTicks": 200.0,
+        "offerOpportunity": 1.0,
+        "urgencyBase": 0.3,
+        "cost": 0.1,
+        "risk": 0.05,
+        "benefit": 0.7,
+        "urgencyDeadline": 0.3
+      },
+      "combat": {
+        "riskDisadvantage": 0.4,
+        "benefitBase": 0.45,
+        "urgencyBase": 0.45,
+        "benefitAnger": 0.35,
+        "riskHealth": 0.6,
+        "advantageBase": 0.5,
+        "opportunityDistanceDrop": 0.5,
+        "targetDistanceScale": 32.0,
+        "differenceDivisor": 2.0,
+        "urgencyLowHealth": 0.2,
+        "costDistance": 0.3,
+        "braveryDivisor": 20.0,
+        "strengthHealth": 10.0,
+        "urgencyAnger": 0.35,
+        "costBase": 0.2,
+        "targetStrengthDivisor": 20.0,
+        "strengthDivisor": 20.0,
+        "benefitAdvantage": 0.2
+      },
+      "look_at_creature": {
+        "creatureRange": 8.0,
+        "creatureDistanceScale": 4.0,
+        "urgencyBase": 0.1,
+        "urgencyCloseness": 0.25,
+        "benefitBase": 0.4,
+        "capabilityBase": 0.7,
+        "opportunityCloseness": 0.85,
+        "costBase": 0.01,
+        "costDistance": 0.04,
+        "costDistanceScale": 8.0,
+        "risk": 0.0
+      },
+      "return_home": {
+        "costTravel": 0.45,
+        "riskDanger": 0.1,
+        "dayBenefit": 0.75,
+        "costBase": 0.15,
+        "urgencyDanger": 0.25,
+        "urgencyBase": 0.2,
+        "homeDistanceScale": 64.0,
+        "capability": 0.85,
+        "returnHomeRadius": 16.0,
+        "urgencyNight": 0.15,
+        "urgencyTravel": 0.4,
+        "nightBenefit": 0.85,
+        "opportunity": 1.0
+      },
+      "escape_water": {
+        "capabilityBase": 0.7,
+        "risk": 0.0,
+        "opportunity": 1.0,
+        "capabilityHealth": 0.3,
+        "urgency": 1.0,
+        "cost": 0.0,
+        "benefit": 1.0
+      },
+      "farmer": {
+        "opportunity": 1.0,
+        "workRadius": 256.0,
+        "skillBase": 0.55,
+        "benefit": 0.85,
+        "skillShare": 0.45,
+        "cost": 0.15,
+        "risk": 0.1,
+        "urgencyAmbition": 0.35,
+        "urgencyBase": 0.4
+      },
+      "panic": {
+        "riskBase": 0.15,
+        "urgencyBase": 0.55,
+        "riskDanger": 0.3,
+        "noAttackerOpportunity": 0.65,
+        "capabilityBraveryDrop": 0.35,
+        "cost": 0.2,
+        "urgencyDanger": 0.45,
+        "attackerOpportunityDrop": 0.4,
+        "benefit": 0.9,
+        "capabilityBase": 0.65,
+        "riskSafety": 0.15,
+        "attackerDistanceScale": 24.0
+      },
+      "avoid_monster": {
+        "monsterDistanceScale": 16.0,
+        "riskHealth": 0.5,
+        "urgencySafety": 0.4,
+        "cost": 0.25,
+        "capabilityBravery": 0.35,
+        "opportunity": 1.0,
+        "capabilityBase": 0.65,
+        "urgencyProximity": 0.6,
+        "benefit": 0.9,
+        "threatSearchRange": 8.0
+      },
+      "idle": {
+        "cost": 0.15,
+        "risk": 0.0,
+        "capability": 1.0,
+        "urgency": 0.1,
+        "benefit": 0.5,
+        "opportunity": 1.0
+      },
+      "wander": {
+        "urgencyMoraleDeficit": 0.5,
+        "movementOpportunity": 0.75,
+        "benefit": 0.6,
+        "retryTicks": 100.0,
+        "urgencySafetyDeficit": 0.35,
+        "capability": 0.85,
+        "cost": 0.25,
+        "risk": 0.15,
+        "urgencyBase": 0.15
+      },
+      "sleep": {
+        "bedOpportunity": 1.0,
+        "sleepCostDistanceScale": 32.0,
+        "costBase": 0.1,
+        "benefit": 0.9,
+        "urgencyTiredness": 0.65,
+        "risk": 0.05,
+        "capability": 0.85,
+        "costDistance": 0.3,
+        "urgencyBase": 0.35
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "item.theeconomist.copper_crown": "Copper Crown",
+  "item.theeconomist.silver_crown": "Silver Crown",
+  "item.theeconomist.gold_crown": "Gold Crown",
+  "itemGroup.theeconomist.currency": "The Economist",
+  "tag.item.theeconomist.currency": "Currency",
+  "tooltip.theeconomist.crown_value.one": "Value: 1 Crown",
+  "tooltip.theeconomist.crown_value.many": "Value: %s Crowns",
+  "item.theeconomist.empty_blueprint": "Empty Blueprint",
+  "itemGroup.theeconomist.blueprint": "Blueprints",
+  "key.categories.theeconomist.blueprint": "Blueprint",
+  "key.theeconomist.rotate_blueprint": "Rotate Blueprint",
+  "hud.theeconomist.blueprint.rotate": "%s to rotate"
+}

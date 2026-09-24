@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "theeconomist-gametest",
+  "version": "1.0.0",
+  "name": "The Economist Game Tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": [
+      "com.jedts.theeconomist.gametest.CitizenFarmingTradeGameTests",
+      "com.jedts.theeconomist.gametest.CitizenHouseGameTests"
+    ]
+  }
+}
+
